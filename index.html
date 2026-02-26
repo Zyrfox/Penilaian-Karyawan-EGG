@@ -267,7 +267,7 @@
                                 <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">${user.posisi}</p>
                             </div>
                         </div>
-                        <div id="status-${index}" class="text-[10px] font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-500 border border-slate-700 uppercase">Menunggu</div>
+                        <div id="status-${index}" class="text-[10px] font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-500 border border-slate-700 uppercase transition-all">Menunggu</div>
                     </div>
                     <div id="content-${index}" class="hidden max-h-0 overflow-hidden transition-all duration-500 ease-in-out bg-slate-900/40 border-t border-slate-800">
                         <div class="p-6 space-y-6">
@@ -276,6 +276,9 @@
                     </div>
                 `;
                 container.appendChild(card);
+
+                // RESTORE DRAFT JIKA ADA
+                restoreDraft(index);
             });
         }
 
@@ -326,10 +329,54 @@
             return html;
         }
 
+        // AUTO-SAVE ENGINE ⚙️
         function updateProgress(index) {
+            const penilai = document.getElementById('selectedName').innerText;
+            const targetName = userData[index].nama;
+
+            // 1. Kumpulkan semua nilai saat ini
+            const draftObj = {
+                ss1: document.getElementById(`ss1-${index}`).value, ss2: document.getElementById(`ss2-${index}`).value, ss3: document.getElementById(`ss3-${index}`).value, ss4: document.getElementById(`ss4-${index}`).value,
+                hs1: document.getElementById(`hs1-${index}`).value, hs2: document.getElementById(`hs2-${index}`).value, hs3: document.getElementById(`hs3-${index}`).value, hs4: document.getElementById(`hs4-${index}`).value,
+                at1: document.getElementById(`at1-${index}`).value, at2: document.getElementById(`at2-${index}`).value, at3: document.getElementById(`at3-${index}`).value, at4: document.getElementById(`at4-${index}`).value,
+                sholat: document.getElementById(`sholat-${index}`).value
+            };
+
+            // 2. Simpan ke LocalStorage Browser
+            localStorage.setItem(`EGG_DRAFT_${penilai}_${targetName}`, JSON.stringify(draftObj));
+
+            // 3. Update UI Badge
             const status = document.getElementById(`status-${index}`);
-            status.innerText = "Draft";
-            status.className = "text-[10px] font-bold px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/50 uppercase";
+            status.innerText = "Draft Tersimpan";
+            status.className = "text-[10px] font-bold px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 uppercase";
+        }
+
+        // AUTO-LOAD ENGINE ⚙️
+        function restoreDraft(index) {
+            const penilai = document.getElementById('selectedName').innerText;
+            const targetName = userData[index].nama;
+            const savedDraft = localStorage.getItem(`EGG_DRAFT_${penilai}_${targetName}`);
+
+            if (savedDraft) {
+                const draftObj = JSON.parse(savedDraft);
+                let hasValue = false;
+
+                // Masukkan kembali nilai ke dropdown
+                ['ss1', 'ss2', 'ss3', 'ss4', 'hs1', 'hs2', 'hs3', 'hs4', 'at1', 'at2', 'at3', 'at4', 'sholat'].forEach(key => {
+                    const el = document.getElementById(`${key}-${index}`);
+                    if (el && draftObj[key]) {
+                        el.value = draftObj[key];
+                        hasValue = true;
+                    }
+                });
+
+                // Jika ada isinya, update badge jadi kuning
+                if (hasValue) {
+                    const status = document.getElementById(`status-${index}`);
+                    status.innerText = "Draft Tersimpan";
+                    status.className = "text-[10px] font-bold px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 uppercase";
+                }
+            }
         }
 
         document.getElementById('btnSubmit').onclick = async () => {
@@ -361,6 +408,12 @@
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ data: batch })
                 });
+
+                // GARBAGE COLLECTOR: Hapus draft yang udah sukses terkirim
+                batch.forEach(item => {
+                    localStorage.removeItem(`EGG_DRAFT_${penilai}_${item.yangDinilai}`);
+                });
+
                 alert("Data berhasil dikirim ke database.");
                 location.reload();
             } catch (e) { alert("Kesalahan koneksi."); btn.innerHTML = "KIRIM PENILAIAN"; btn.disabled = false; }

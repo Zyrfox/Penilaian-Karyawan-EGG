@@ -663,10 +663,19 @@
                 const el = document.getElementById(`${k}-${index}`);
                 draftObj[k] = el ? el.value : '';
             });
-            localStorage.setItem(`EGG_DRAFT_${penilai}_${targetName}`, JSON.stringify(draftObj));
+
+            const hasAny = keys.some(k => draftObj[k]);
             const status = document.getElementById(`status-${index}`);
-            status.innerText = "Draft Tersimpan";
-            status.className = "badge-draft text-[10px] font-bold px-3 py-1 rounded-full uppercase";
+
+            if (hasAny) {
+                localStorage.setItem(`EGG_DRAFT_${penilai}_${targetName}`, JSON.stringify(draftObj));
+                status.innerText = "Draft Tersimpan";
+                status.className = "badge-draft text-[10px] font-bold px-3 py-1 rounded-full uppercase";
+            } else {
+                localStorage.removeItem(`EGG_DRAFT_${penilai}_${targetName}`);
+                status.innerText = "Menunggu";
+                status.className = "badge-waiting text-[10px] font-bold px-3 py-1 rounded-full uppercase transition-all";
+            }
         }
 
         function restoreDraft(index) {

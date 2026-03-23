@@ -124,16 +124,14 @@
         }
 
         .csel-menu {
-            position: absolute;
-            top: calc(100% + 6px);
-            left: 0;
-            right: 0;
+            position: fixed;
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 14px;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.14);
-            z-index: 500;
-            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+            z-index: 9999;
+            overflow-y: auto;
+            max-height: 220px;
             animation: cselIn 0.15s ease-out;
         }
 
@@ -361,6 +359,23 @@
 
         let activeCsel = null;
 
+        function positionCsel(id) {
+            const btn  = document.getElementById('csel-btn-' + id);
+            const menu = document.getElementById('csel-menu-' + id);
+            if (!btn || !menu) return;
+            const rect = btn.getBoundingClientRect();
+            // Flip up if not enough space below
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const menuH = Math.min(220, menu.scrollHeight + 2);
+            if (spaceBelow < menuH + 10 && rect.top > menuH + 10) {
+                menu.style.top  = (rect.top - menuH - 6) + 'px';
+            } else {
+                menu.style.top  = (rect.bottom + 6) + 'px';
+            }
+            menu.style.left  = rect.left + 'px';
+            menu.style.width = rect.width + 'px';
+        }
+
         function toggleCsel(id, e) {
             e.stopPropagation();
             const menu = document.getElementById('csel-menu-' + id);
@@ -379,10 +394,15 @@
                 activeCsel = null;
             } else {
                 menu.classList.remove('hidden');
+                positionCsel(id);
                 btn.classList.add('open');
                 activeCsel = id;
             }
         }
+
+        // Reposition on scroll/resize
+        window.addEventListener('scroll', () => { if (activeCsel) positionCsel(activeCsel); }, true);
+        window.addEventListener('resize', () => { if (activeCsel) positionCsel(activeCsel); });
 
         function setCsel(id, value, index) {
             applyCselValue(id, value);
@@ -433,7 +453,7 @@
             }).join('');
 
             return `
-                <div class="relative">
+                <div>
                     <input type="hidden" id="${id}">
                     <button type="button" id="csel-btn-${id}" class="csel-btn"
                         onclick="toggleCsel('${id}', event)">

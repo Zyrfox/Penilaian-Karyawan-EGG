@@ -131,7 +131,9 @@
             box-shadow: 0 12px 40px rgba(0,0,0,0.18);
             z-index: 9999;
             overflow-y: auto;
+            overflow-x: hidden;
             max-height: 220px;
+            min-width: 200px;
             animation: cselIn 0.15s ease-out;
         }
 
@@ -151,6 +153,7 @@
             cursor: pointer;
             transition: background 0.12s;
             font-family: 'Inter', sans-serif;
+            white-space: nowrap;
         }
         .csel-item:hover { background: var(--surface2); }
         .csel-item.selected { background: rgba(82,183,136,0.1); }
@@ -363,17 +366,28 @@
             const btn  = document.getElementById('csel-btn-' + id);
             const menu = document.getElementById('csel-menu-' + id);
             if (!btn || !menu) return;
-            const rect = btn.getBoundingClientRect();
-            // Flip up if not enough space below
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const menuH = Math.min(220, menu.scrollHeight + 2);
-            if (spaceBelow < menuH + 10 && rect.top > menuH + 10) {
-                menu.style.top  = (rect.top - menuH - 6) + 'px';
-            } else {
-                menu.style.top  = (rect.bottom + 6) + 'px';
+            const rect    = btn.getBoundingClientRect();
+            const menuW   = Math.max(rect.width, 200);
+            const pad     = 8;
+
+            // Horizontal: shift left if overflows right edge
+            let left = rect.left;
+            if (left + menuW > window.innerWidth - pad) {
+                left = window.innerWidth - menuW - pad;
             }
-            menu.style.left  = rect.left + 'px';
-            menu.style.width = rect.width + 'px';
+            if (left < pad) left = pad;
+
+            // Vertical: flip up if not enough space below
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const menuH      = Math.min(220, menu.scrollHeight + 2);
+            if (spaceBelow < menuH + 10 && rect.top > menuH + 10) {
+                menu.style.top = (rect.top - menuH - 6) + 'px';
+            } else {
+                menu.style.top = (rect.bottom + 6) + 'px';
+            }
+
+            menu.style.left  = left + 'px';
+            menu.style.width = menuW + 'px';
         }
 
         function toggleCsel(id, e) {

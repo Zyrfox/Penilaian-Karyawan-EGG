@@ -441,7 +441,7 @@
             const items = options.map(v => {
                 const color = VALUE_COLORS[v];
                 const dot   = color ? `<span class="csel-dot" style="background:${color}"></span>` : '';
-                return `<div class="csel-item" data-val="${v}" onclick="setCsel('${id}',${JSON.stringify(v)},${index})">${dot}${v}</div>`;
+                return `<div class="csel-item" data-val="${v}" onclick="setCsel('${id}','${v}',${index})">${dot}${v}</div>`;
             }).join('');
 
             return `

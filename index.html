@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EASY GOING GROUP - Penilaian Kinerja</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #eef3ee;
@@ -39,7 +39,7 @@
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
@@ -78,7 +78,7 @@
             color: var(--text);
             border-radius: 12px;
             padding: 10px 14px;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 12px;
             width: 100%;
             outline: none;
@@ -192,8 +192,11 @@
             </div>
         </header>
 
+        <!-- Backdrop for dropdown -->
+    <div id="dropdownBackdrop" class="hidden fixed inset-0" style="z-index: 99; background: rgba(0,0,0,0.08); backdrop-filter: blur(1px);" onclick="closeDropdown()"></div>
+
         <!-- EVALUATOR SELECT -->
-        <section class="mb-10 fade-in" style="animation-delay: 0.1s">
+        <section class="mb-10 fade-in" style="animation-delay: 0.1s; position: relative; z-index: 100;">
             <div class="card p-6 rounded-3xl">
                 <label class="section-label mb-4 block" style="color: var(--primary)">
                     Identitas Penilai (SPV / Manager)
@@ -307,23 +310,28 @@
         const selectMenu = document.getElementById('selectMenu');
         const selectArrow = document.getElementById('selectArrow');
 
-        // Open/close on button click
-        selectBtn.addEventListener('click', e => {
-            e.stopPropagation();
-            const isOpen = !selectMenu.classList.contains('hidden');
-            selectMenu.classList.toggle('hidden', isOpen);
-            selectArrow.classList.toggle('rotate-180', !isOpen);
-        });
+        const backdrop = document.getElementById('dropdownBackdrop');
 
-        // Prevent clicks INSIDE menu from bubbling to document (fixes searchbar)
-        selectMenu.addEventListener('click', e => e.stopPropagation());
-        selectMenu.addEventListener('mousedown', e => e.stopPropagation());
+        function openDropdown() {
+            selectMenu.classList.remove('hidden');
+            selectArrow.classList.add('rotate-180');
+            backdrop.classList.remove('hidden');
+        }
 
-        // Close on outside click
-        document.addEventListener('click', () => {
+        function closeDropdown() {
             selectMenu.classList.add('hidden');
             selectArrow.classList.remove('rotate-180');
+            backdrop.classList.add('hidden');
+        }
+
+        selectBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            selectMenu.classList.contains('hidden') ? openDropdown() : closeDropdown();
         });
+
+        // Prevent clicks INSIDE menu from closing it (fixes searchbar)
+        selectMenu.addEventListener('click', e => e.stopPropagation());
+        selectMenu.addEventListener('mousedown', e => e.stopPropagation());
 
         function renderEvaluatorOptions(list) {
             document.getElementById('evaluatorList').innerHTML = list.map(u => `
@@ -343,8 +351,7 @@
             const nameEl = document.getElementById('selectedName');
             nameEl.innerText = name;
             nameEl.style.color = 'var(--text)';
-            selectMenu.classList.add('hidden');
-            selectArrow.classList.remove('rotate-180');
+            closeDropdown();
             document.getElementById('statusText').innerText = "Memuat Daftar...";
 
             try {

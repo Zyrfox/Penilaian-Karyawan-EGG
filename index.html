@@ -64,15 +64,101 @@
             color: #fff;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-
-        .btn-accent:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(244, 162, 97, 0.4);
-        }
-
+        .btn-accent:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(244,162,97,0.4); }
         .btn-accent:active { transform: scale(0.97); }
 
-        select, input[type="text"] {
+        /* ── CUSTOM SELECT ─────────────────────────── */
+        .csel-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 9px 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            text-align: left;
+        }
+        .csel-btn:hover {
+            border-color: var(--primary-light);
+            background: var(--surface2);
+        }
+        .csel-btn.has-value {
+            border-color: var(--border);
+        }
+        .csel-btn.open {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(82,183,136,0.18);
+        }
+        .csel-btn svg {
+            flex-shrink: 0;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+        .csel-btn.open svg { transform: rotate(180deg); }
+
+        .csel-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .csel-lbl {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .csel-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.14);
+            z-index: 500;
+            overflow: hidden;
+            animation: cselIn 0.15s ease-out;
+        }
+
+        @keyframes cselIn {
+            from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .csel-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.12s;
+            font-family: 'Inter', sans-serif;
+        }
+        .csel-item:hover { background: var(--surface2); }
+        .csel-item.selected { background: rgba(82,183,136,0.1); }
+        /* ─────────────────────────────────────────── */
+
+        input[type="text"] {
             background: var(--surface2);
             border: 1px solid var(--border);
             color: var(--text);
@@ -82,30 +168,25 @@
             font-size: 12px;
             width: 100%;
             outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s, background 0.3s;
-            appearance: auto;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-
-        select:focus, input[type="text"]:focus {
+        input[type="text"]:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(82, 183, 136, 0.18);
+            box-shadow: 0 0 0 3px rgba(82,183,136,0.18);
         }
 
         .badge-waiting {
-            background: rgba(107, 124, 107, 0.12);
+            background: rgba(107,124,107,0.12);
             color: var(--text-muted);
-            border: 1px solid rgba(107, 124, 107, 0.25);
+            border: 1px solid rgba(107,124,107,0.25);
         }
-
         .badge-draft {
-            background: rgba(244, 162, 97, 0.15);
+            background: rgba(244,162,97,0.15);
             color: var(--accent-dark);
-            border: 1px solid rgba(244, 162, 97, 0.35);
+            border: 1px solid rgba(244,162,97,0.35);
         }
 
-        .avatar-chip {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-        }
+        .avatar-chip { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
 
         .section-label {
             font-size: 10px;
@@ -120,24 +201,15 @@
             cursor: pointer;
             transition: background 0.15s, padding-left 0.15s, color 0.15s;
         }
-
         #evaluatorList div:hover {
-            background: rgba(82, 183, 136, 0.12);
+            background: rgba(82,183,136,0.12);
             color: var(--primary);
             padding-left: 1.5rem;
         }
 
-        .floating-submit {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 50;
-        }
+        .floating-submit { position: fixed; bottom: 2rem; right: 2rem; z-index: 50; }
 
-        .fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
-        }
-
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -166,10 +238,8 @@
             </div>
 
             <div class="flex items-center gap-3 fade-in">
-                <!-- Theme Toggle -->
                 <button id="themeToggle" onclick="toggleTheme()"
-                    class="card rounded-2xl p-2.5 cursor-pointer flex items-center justify-center"
-                    title="Toggle tema">
+                    class="card rounded-2xl p-2.5 cursor-pointer flex items-center justify-center" title="Toggle tema">
                     <svg id="iconSun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--accent)">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
@@ -180,7 +250,6 @@
                     </svg>
                 </button>
 
-                <!-- Status Badge -->
                 <div id="statusBadge" class="card px-5 py-2 rounded-2xl flex items-center gap-3 text-sm font-bold">
                     <span class="relative flex h-3 w-3">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
@@ -192,8 +261,10 @@
             </div>
         </header>
 
-        <!-- Backdrop for dropdown -->
-    <div id="dropdownBackdrop" class="hidden fixed inset-0" style="z-index: 99; background: rgba(0,0,0,0.08); backdrop-filter: blur(1px);" onclick="closeDropdown()"></div>
+        <!-- Backdrop for evaluator dropdown -->
+        <div id="dropdownBackdrop" class="hidden fixed inset-0"
+            style="z-index: 99; background: rgba(0,0,0,0.08); backdrop-filter: blur(1px);"
+            onclick="closeDropdown()"></div>
 
         <!-- EVALUATOR SELECT -->
         <section class="mb-10 fade-in" style="animation-delay: 0.1s; position: relative; z-index: 100;">
@@ -220,8 +291,7 @@
                             <input type="text" id="searchEvaluator" placeholder="Cari nama Anda...">
                         </div>
                         <div id="evaluatorList" class="max-h-64 overflow-y-auto p-2 space-y-1"
-                            style="background: var(--surface)">
-                        </div>
+                            style="background: var(--surface)"></div>
                     </div>
                 </div>
             </div>
@@ -244,15 +314,13 @@
             </div>
 
             <div id="karyawanContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-32 fade-in"
-                style="animation-delay: 0.3s">
-            </div>
+                style="animation-delay: 0.3s"></div>
         </div>
     </div>
 
     <!-- SUBMIT BUTTON -->
     <div id="submitContainer" class="floating-submit opacity-0 transition-all duration-500 scale-90 translate-y-10">
-        <button id="btnSubmit"
-            class="btn-accent px-8 py-4 rounded-2xl font-black text-lg flex items-center gap-3">
+        <button id="btnSubmit" class="btn-accent px-8 py-4 rounded-2xl font-black text-lg flex items-center gap-3">
             <span>KIRIM PENILAIAN</span>
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
@@ -271,11 +339,111 @@
             localStorage.setItem('EGG_THEME', htmlRoot.classList.contains('dark') ? 'dark' : 'light');
             updateThemeIcons();
         }
-
         function updateThemeIcons() {
             const dark = htmlRoot.classList.contains('dark');
             document.getElementById('iconSun').classList.toggle('hidden', !dark);
             document.getElementById('iconMoon').classList.toggle('hidden', dark);
+        }
+
+        // === CUSTOM SELECT (form fields) ===
+        const VALUE_COLORS = {
+            '1 (Sangat Buruk)': '#ef4444',
+            '2 (Buruk)':        '#f97316',
+            '4 (Baik)':         '#3b82f6',
+            '5 (Sangat Baik)':  '#22c55e',
+            'Tidak Pernah':     '#ef4444',
+            'Jarang':           '#f97316',
+            '5 Waktu':          '#3b82f6',
+            'Tepat Waktu':      '#22c55e',
+            'Bolong':           '#f97316',
+            'Full':             '#22c55e',
+        };
+
+        let activeCsel = null;
+
+        function toggleCsel(id, e) {
+            e.stopPropagation();
+            const menu = document.getElementById('csel-menu-' + id);
+            const btn  = document.getElementById('csel-btn-' + id);
+            const isOpen = !menu.classList.contains('hidden');
+
+            // Close any other open menu
+            if (activeCsel && activeCsel !== id) {
+                document.getElementById('csel-menu-' + activeCsel)?.classList.add('hidden');
+                document.getElementById('csel-btn-'  + activeCsel)?.classList.remove('open');
+            }
+
+            if (isOpen) {
+                menu.classList.add('hidden');
+                btn.classList.remove('open');
+                activeCsel = null;
+            } else {
+                menu.classList.remove('hidden');
+                btn.classList.add('open');
+                activeCsel = id;
+            }
+        }
+
+        function setCsel(id, value, index) {
+            applyCselValue(id, value);
+            document.getElementById('csel-menu-' + id)?.classList.add('hidden');
+            document.getElementById('csel-btn-'  + id)?.classList.remove('open');
+            activeCsel = null;
+            updateProgress(index);
+        }
+
+        function applyCselValue(id, value) {
+            const hidden = document.getElementById(id);
+            if (hidden) hidden.value = value;
+
+            const lbl = document.getElementById('csel-lbl-' + id);
+            if (!lbl) return;
+
+            const color = VALUE_COLORS[value];
+            const dot   = color ? `<span class="csel-dot" style="background:${color}"></span>` : '';
+            lbl.innerHTML = dot + value;
+            lbl.style.color = color || 'var(--text)';
+
+            const btn = document.getElementById('csel-btn-' + id);
+            if (btn) btn.classList.add('has-value');
+
+            // Update selected state in menu
+            const menu = document.getElementById('csel-menu-' + id);
+            if (menu) {
+                menu.querySelectorAll('.csel-item').forEach(el => {
+                    el.classList.toggle('selected', el.dataset.val === value);
+                });
+            }
+        }
+
+        // Close all csel on outside click
+        document.addEventListener('click', () => {
+            if (activeCsel) {
+                document.getElementById('csel-menu-' + activeCsel)?.classList.add('hidden');
+                document.getElementById('csel-btn-'  + activeCsel)?.classList.remove('open');
+                activeCsel = null;
+            }
+        });
+
+        function makeCsel(id, options, index, placeholder) {
+            const items = options.map(v => {
+                const color = VALUE_COLORS[v];
+                const dot   = color ? `<span class="csel-dot" style="background:${color}"></span>` : '';
+                return `<div class="csel-item" data-val="${v}" onclick="setCsel('${id}',${JSON.stringify(v)},${index})">${dot}${v}</div>`;
+            }).join('');
+
+            return `
+                <div class="relative">
+                    <input type="hidden" id="${id}">
+                    <button type="button" id="csel-btn-${id}" class="csel-btn"
+                        onclick="toggleCsel('${id}', event)">
+                        <span id="csel-lbl-${id}" class="csel-lbl">${placeholder}</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div id="csel-menu-${id}" class="csel-menu hidden">${items}</div>
+                </div>`;
         }
 
         // === APP ===
@@ -305,19 +473,17 @@
             } catch (e) { document.getElementById('statusText').innerText = "Link Error"; }
         };
 
-        // CUSTOM SELECT
-        const selectBtn  = document.getElementById('selectButton');
-        const selectMenu = document.getElementById('selectMenu');
+        // EVALUATOR CUSTOM SELECT
+        const selectBtn   = document.getElementById('selectButton');
+        const selectMenu  = document.getElementById('selectMenu');
         const selectArrow = document.getElementById('selectArrow');
-
-        const backdrop = document.getElementById('dropdownBackdrop');
+        const backdrop    = document.getElementById('dropdownBackdrop');
 
         function openDropdown() {
             selectMenu.classList.remove('hidden');
             selectArrow.classList.add('rotate-180');
             backdrop.classList.remove('hidden');
         }
-
         function closeDropdown() {
             selectMenu.classList.add('hidden');
             selectArrow.classList.remove('rotate-180');
@@ -328,9 +494,7 @@
             e.stopPropagation();
             selectMenu.classList.contains('hidden') ? openDropdown() : closeDropdown();
         });
-
-        // Prevent clicks INSIDE menu from closing it (fixes searchbar)
-        selectMenu.addEventListener('click', e => e.stopPropagation());
+        selectMenu.addEventListener('click',     e => e.stopPropagation());
         selectMenu.addEventListener('mousedown', e => e.stopPropagation());
 
         function renderEvaluatorOptions(list) {
@@ -403,27 +567,24 @@
             const content = document.getElementById(`content-${index}`);
             const hidden  = content.classList.contains('hidden');
             content.classList.toggle('hidden', !hidden);
-            content.style.maxHeight = hidden ? "2000px" : "0";
+            content.style.maxHeight = hidden ? "3000px" : "0";
         }
 
         function generateFields(index) {
             const cats = [
-                { key: 'ss', label: 'Soft Skill',  color: 'var(--primary)' },
-                { key: 'hs', label: 'Hard Skill',  color: '#7c3aed' },
-                { key: 'at', label: 'Attitude',    color: '#db2777' }
+                { key: 'ss', label: 'Soft Skill', color: 'var(--primary)' },
+                { key: 'hs', label: 'Hard Skill', color: '#7c3aed' },
+                { key: 'at', label: 'Attitude',   color: '#db2777' }
             ];
             let html = `<div class="grid grid-cols-1 gap-6">`;
             cats.forEach(({ key, label, color }) => {
                 html += `<div>
-                    <h4 class="section-label mb-4" style="color: ${color}">${label}</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h4 class="section-label mb-3" style="color:${color}">${label}</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         ${metrics[key].map((q, i) => `
                             <div class="space-y-1.5">
-                                <label class="text-[11px] font-medium" style="color: var(--text-muted)">${q}</label>
-                                <select id="${key}${i + 1}-${index}" onchange="updateProgress(${index})">
-                                    <option value="">Nilai...</option>
-                                    ${opsiNilai.map(v => `<option value="${v}">${v}</option>`).join('')}
-                                </select>
+                                <label class="text-[11px] font-medium" style="color:var(--text-muted)">${q}</label>
+                                ${makeCsel(`${key}${i+1}-${index}`, opsiNilai, index, 'Nilai...')}
                             </div>
                         `).join('')}
                     </div>
@@ -431,21 +592,15 @@
             });
             html += `
                 <div class="pt-4" style="border-top: 1px solid var(--border)">
-                    <h4 class="section-label mb-4" style="color: var(--accent-dark)">Ibadah</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h4 class="section-label mb-3" style="color:var(--accent-dark)">Ibadah</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div class="space-y-1.5">
-                            <label class="text-[11px] font-medium" style="color: var(--text-muted)">Melaksanakan Sholat</label>
-                            <select id="sholat-${index}" onchange="updateProgress(${index})">
-                                <option value="">Pilih Status...</option>
-                                ${opsiSholat.map(v => `<option value="${v}">${v}</option>`).join('')}
-                            </select>
+                            <label class="text-[11px] font-medium" style="color:var(--text-muted)">Melaksanakan Sholat</label>
+                            ${makeCsel(`sholat-${index}`, opsiSholat, index, 'Pilih Status...')}
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-[11px] font-medium" style="color: var(--text-muted)">Melaksanakan Puasa</label>
-                            <select id="puasa-${index}" onchange="updateProgress(${index})">
-                                <option value="">Pilih Status...</option>
-                                ${opsiPuasa.map(v => `<option value="${v}">${v}</option>`).join('')}
-                            </select>
+                            <label class="text-[11px] font-medium" style="color:var(--text-muted)">Melaksanakan Puasa</label>
+                            ${makeCsel(`puasa-${index}`, opsiPuasa, index, 'Pilih Status...')}
                         </div>
                     </div>
                 </div>
@@ -456,26 +611,16 @@
         function updateProgress(index) {
             const penilai    = document.getElementById('selectedName').innerText;
             const targetName = userData[index].nama;
-            const draftObj   = {
-                ss1: document.getElementById(`ss1-${index}`).value,
-                ss2: document.getElementById(`ss2-${index}`).value,
-                ss3: document.getElementById(`ss3-${index}`).value,
-                ss4: document.getElementById(`ss4-${index}`).value,
-                hs1: document.getElementById(`hs1-${index}`).value,
-                hs2: document.getElementById(`hs2-${index}`).value,
-                hs3: document.getElementById(`hs3-${index}`).value,
-                hs4: document.getElementById(`hs4-${index}`).value,
-                at1: document.getElementById(`at1-${index}`).value,
-                at2: document.getElementById(`at2-${index}`).value,
-                at3: document.getElementById(`at3-${index}`).value,
-                at4: document.getElementById(`at4-${index}`).value,
-                sholat: document.getElementById(`sholat-${index}`).value,
-                puasa:  document.getElementById(`puasa-${index}`).value
-            };
+            const keys = ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','sholat','puasa'];
+            const draftObj = {};
+            keys.forEach(k => {
+                const el = document.getElementById(`${k}-${index}`);
+                draftObj[k] = el ? el.value : '';
+            });
             localStorage.setItem(`EGG_DRAFT_${penilai}_${targetName}`, JSON.stringify(draftObj));
             const status = document.getElementById(`status-${index}`);
-            status.innerText  = "Draft Tersimpan";
-            status.className  = "badge-draft text-[10px] font-bold px-3 py-1 rounded-full uppercase";
+            status.innerText = "Draft Tersimpan";
+            status.className = "badge-draft text-[10px] font-bold px-3 py-1 rounded-full uppercase";
         }
 
         function restoreDraft(index) {
@@ -483,11 +628,14 @@
             const targetName = userData[index].nama;
             const saved      = localStorage.getItem(`EGG_DRAFT_${penilai}_${targetName}`);
             if (!saved) return;
-            const draftObj  = JSON.parse(saved);
-            let hasValue    = false;
+            const draftObj = JSON.parse(saved);
+            let hasValue   = false;
             ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','sholat','puasa'].forEach(key => {
-                const el = document.getElementById(`${key}-${index}`);
-                if (el && draftObj[key]) { el.value = draftObj[key]; hasValue = true; }
+                const fullId = `${key}-${index}`;
+                if (draftObj[key]) {
+                    applyCselValue(fullId, draftObj[key]);
+                    hasValue = true;
+                }
             });
             if (hasValue) {
                 const status = document.getElementById(`status-${index}`);
@@ -502,7 +650,7 @@
             let batch     = [];
 
             userData.forEach((u, i) => {
-                const ss1 = document.getElementById(`ss1-${i}`).value;
+                const ss1 = document.getElementById(`ss1-${i}`)?.value;
                 if (!ss1) return;
                 batch.push({
                     penilai, yangDinilai: u.nama,

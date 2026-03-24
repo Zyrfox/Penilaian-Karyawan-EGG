@@ -498,7 +498,7 @@
         const metrics = {
             ss: ['Komunikasi dengan rekan & atasan', 'Kerja sama tim', 'Tanggung jawab & manajemen waktu', 'Inisiatif & penyelesaian masalah'],
             hs: ['Penguasaan tugas & SOP', 'Ketelitian & kecepatan kerja', 'Kemampuan menggunakan alat/sistem', 'Konsistensi hasil kerja'],
-            at: ['Kedisiplinan & kehadiran', 'Kepatuhan aturan & arahan', 'Etika & profesionalitas', 'Tanggung jawab lingkungan']
+            at: ['Kedisiplinan & kehadiran', 'Kepatuhan aturan & arahan', 'Etika & profesionalitas', 'Tanggung jawab lingkungan', 'Ramah terhadap pelanggan']
         };
         const opsiNilai  = ['1 (Sangat Buruk)', '2 (Buruk)', '4 (Baik)', '5 (Sangat Baik)'];
         const opsiSholat = ['Tidak Pernah', 'Jarang', '5 Waktu', 'Tepat Waktu'];
@@ -657,7 +657,7 @@
         function updateProgress(index) {
             const penilai    = document.getElementById('selectedName').innerText;
             const targetName = userData[index].nama;
-            const keys = ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','sholat','puasa'];
+            const keys = ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','at5','sholat','puasa'];
             const draftObj = {};
             keys.forEach(k => {
                 const el = document.getElementById(`${k}-${index}`);
@@ -685,7 +685,7 @@
             if (!saved) return;
             const draftObj = JSON.parse(saved);
             let hasValue   = false;
-            ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','sholat','puasa'].forEach(key => {
+            ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','at5','sholat','puasa'].forEach(key => {
                 const fullId = `${key}-${index}`;
                 if (draftObj[key]) {
                     applyCselValue(fullId, draftObj[key]);
@@ -721,6 +721,7 @@
                     at2: document.getElementById(`at2-${i}`).value,
                     at3: document.getElementById(`at3-${i}`).value,
                     at4: document.getElementById(`at4-${i}`).value,
+                    at5: document.getElementById(`at5-${i}`).value,
                     sholat: document.getElementById(`sholat-${i}`).value,
                     puasa:  document.getElementById(`puasa-${i}`).value
                 });

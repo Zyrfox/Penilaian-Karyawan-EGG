@@ -705,8 +705,10 @@
             let batch     = [];
 
             userData.forEach((u, i) => {
+                const allKeys = ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','at5','sholat','puasa'];
+                const hasAny  = allKeys.some(k => document.getElementById(`${k}-${i}`)?.value);
+                if (!hasAny) return;
                 const ss1 = document.getElementById(`ss1-${i}`)?.value;
-                if (!ss1) return;
                 batch.push({
                     penilai, yangDinilai: u.nama,
                     ss1,

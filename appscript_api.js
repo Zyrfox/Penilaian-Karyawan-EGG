@@ -167,6 +167,31 @@ function doGet(e) {
       }
       Logger.log("Column index mapping: " + JSON.stringify(colIndex));
       
+      // Map Indonesian headers to field names
+      var headerToField = {
+        'tanggal': 'timestamp',
+        'nama penilai': 'penilai',
+        'karyawan yang dinilai': 'yangDinilai',
+        'posisi': 'posisi',
+        'outlet': 'outlet',
+        'status': 'category',
+        'komunikasi dengan rekan & atasan': 'ss1',
+        'kerja sama tim': 'ss2',
+        'tangung jawab & manajemen waktu': 'ss3',
+        'inisiatif & penyelesaian masalah': 'ss4',
+        'penguasaan tugas dan sop': 'hs1',
+        'ketelitian & kecepatan kerja': 'hs2',
+        'kemampuan menggunakan alat dan sistem': 'hs3',
+        'konsistensi hasil kerja': 'hs4',
+        'kedisiplinan dan kehadiran': 'at1',
+        'kepatuhan aturan & arahan': 'at2',
+        'etika & profesionalitas': 'at3',
+        'tanggung jawab linkungan': 'at4',
+        'ramah terhadap pelanggan': 'at5',
+        'melaksanakan sholat': 'sholat',
+        'melaksanakan puasa': 'puasa'
+      };
+      
       // Skip header row, start from index 1
       for (var i = 1; i < data.length; i++) {
         var row = data[i];
@@ -180,9 +205,9 @@ function doGet(e) {
         Logger.log("Processing row " + i + ": " + JSON.stringify(row));
         
         var evaluation = {
-          timestamp: row[0] ? new Date(row[0]).toISOString() : null,
-          penilai: row[1] || "",
-          yangDinilai: row[2] || "",
+          timestamp: null,
+          penilai: "",
+          yangDinilai: "",
           posisi: "",
           outlet: "",
           category: "",
@@ -193,36 +218,15 @@ function doGet(e) {
           puasa: ""
         };
         
-        // Get position and outlet from row if available, otherwise from master data
-        // Try different header variations
-        if (hasPosition) {
-          evaluation.posisi = row[colIndex['posisi']] || "";
-        }
-        if (hasOutlet) {
-          evaluation.outlet = row[colIndex['outlet']] || "";
-        }
-        if (hasCategory) {
-          evaluation.category = row[colIndex['category']] || "";
-        }
-        
-        // Get score columns - try exact match first, then partial match
-        var scoreColumns = ['ss1', 'ss2', 'ss3', 'ss4', 'hs1', 'hs2', 'hs3', 'hs4', 
-                           'at1', 'at2', 'at3', 'at4', 'at5', 'sholat', 'puasa'];
-        
-        for (var s = 0; s < scoreColumns.length; s++) {
-          var colName = scoreColumns[s];
-          
-          // Try exact lowercase match
-          if (colIndex[colName] !== undefined) {
-            evaluation[colName] = row[colIndex[colName]] || "";
-          } else {
-            // Try to find column by partial match
-            for (var h = 0; h < headers.length; h++) {
-              var header = headers[h] ? headers[h].toString().toLowerCase() : "";
-              if (header.includes(colName) || header.includes(colName.toUpperCase())) {
-                evaluation[colName] = row[h] || "";
-                break;
-              }
+        // Map row data using Indonesian headers
+        for (var h = 0; h < headers.length; h++) {
+          var header = headers[h] ? headers[h].toString().toLowerCase() : "";
+          var fieldName = headerToField[header];
+          if (fieldName && row[h]) {
+            if (fieldName === 'timestamp') {
+              evaluation[fieldName] = new Date(row[h]).toISOString();
+            } else {
+              evaluation[fieldName] = row[h].toString();
             }
           }
         }

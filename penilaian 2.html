@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="id" id="htmlRoot">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EASY GOING GROUP - Performance Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg: #eef3ee; --surface: #ffffff; --surface2: #f4f8f4; --border: #d0e4d0;
+            --primary: #2d6a4f; --primary-light: #52b788; --accent: #f4a261;
+            --accent-dark: #e76f51; --text: #1c2b1c; --text-muted: #6b7c6b;
+            --shadow: 0 4px 20px rgba(45, 106, 79, 0.08);
+        }
+        html.dark {
+            --bg: #0d1117; --surface: #161b22; --surface2: #1c2128; --border: #2a3a2a;
+            --primary: #52b788; --primary-light: #74c69d; --text: #e6edf3; --text-muted: #8b949e;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: 0.3s; }
+        .card { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: 24px; transition: 0.3s; }
+        .btn-accent { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; border-radius: 16px; transition: 0.2s; }
+        .btn-accent:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        
+        /* Custom Select Styles */
+        .csel-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 7px 12px; height: 38px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
+        .csel-menu { position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; z-index: 100; max-height: 200px; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .csel-item { padding: 10px; font-size: 12px; cursor: pointer; }
+        .csel-item:hover { background: var(--surface2); color: var(--primary); }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 0px; }
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-10 fade-in">
+            <div>
+                <h1 class="text-3xl font-extrabold italic tracking-tighter" style="color: var(--text)">EASY GOING <span style="color: var(--primary)">GROUP</span></h1>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Performance Dashboard</p>
+            </div>
+            <button onclick="toggleTheme()" class="card p-3 rounded-2xl">
+                <svg id="iconSun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" stroke-width="2"/></svg>
+                <svg id="iconMoon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-width="2"/></svg>
+            </button>
+        </header>
+
+        <nav class="flex gap-3 mb-8 fade-in">
+            <button onclick="switchTab('penilaian')" id="tab-p" class="px-6 py-3 rounded-2xl font-bold transition-all bg-[var(--primary)] text-white shadow-lg">Input Nilai</button>
+            <button onclick="switchTab('leaderboard')" id="tab-l" class="px-6 py-3 rounded-2xl font-bold transition-all bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)] flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2"/></svg>
+                Rekap Nilai
+            </button>
+            <button onclick="switchTab('ranking')" id="tab-r" class="px-6 py-3 rounded-2xl font-bold transition-all bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)] flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-width="2"/></svg>
+                Ranking
+            </button>
+        </nav>
+
+        <div id="penilaianContent">
+            <section class="mb-8 fade-in">
+                <div class="card p-6 relative z-[200]">
+                    <label class="text-[10px] font-black uppercase tracking-widest mb-3 block text-[var(--primary)]">Identitas Penilai (SPV / Manager)</label>
+                    <div class="relative">
+                        <button id="selectButton" class="w-full text-left rounded-2xl p-4 text-xl font-bold flex justify-between items-center bg-[var(--surface2)] border border-[var(--border)]">
+                            <span id="selectedName" class="text-[var(--text-muted)]">Pilih Nama...</span>
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2"/></svg>
+                        </button>
+                        <div id="selectMenu" class="hidden absolute top-full left-0 right-0 mt-2 card rounded-2xl overflow-hidden z-[300]">
+                            <div id="evaluatorList" class="max-h-60 overflow-y-auto p-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <div id="matrixSection" class="opacity-30 pointer-events-none transition-all duration-500">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-32" id="karyawanContainer"></div>
+            </div>
+        </div>
+
+        <section id="leaderboardSection" class="hidden fade-in">
+            <div class="card p-6 mb-32">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-2xl font-bold">Rekap Nilai</h2>
+                    <button onclick="exportToExcel()" class="btn-accent px-6 py-2.5 font-bold text-xs">EXPORT EXCEL</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="text-[10px] uppercase text-[var(--text-muted)] border-b border-[var(--border)]">
+                            <tr><th class="pb-4 text-left">Karyawan</th><th class="pb-4 text-center">Avg</th><th class="pb-4">Ibadah</th><th class="pb-4 text-right">Penilai</th></tr>
+                        </thead>
+                        <tbody id="leaderboardBody" class="text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="rankingSection" class="hidden fade-in">
+            <div class="card p-6 mb-32">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-2xl font-bold">Performance Ranking</h2>
+                    <button onclick="exportRankingExcel()" class="btn-accent px-6 py-2.5 font-bold text-xs">EXPORT RANKING</button>
+                </div>
+                <div id="rankingCategories" class="space-y-8">
+                    <div class="category-section">
+                        <h3 class="text-lg font-bold mb-4 text-[var(--primary)]">👔 SPV</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="text-[10px] uppercase text-[var(--text-muted)] border-b border-[var(--border)]">
+                                    <tr><th class="pb-4 text-left">Nama</th><th class="pb-4 text-left">Outlet</th><th class="pb-4 text-left">Posisi</th><th class="pb-4 text-center">Predikat</th><th class="pb-4 text-center">Total Nilai</th></tr>
+                                </thead>
+                                <tbody id="rankingSPV" class="text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="category-section">
+                        <h3 class="text-lg font-bold mb-4 text-[var(--primary)]">👷 Karyawan</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="text-[10px] uppercase text-[var(--text-muted)] border-b border-[var(--border)]">
+                                    <tr><th class="pb-4 text-left">Nama</th><th class="pb-4 text-left">Outlet</th><th class="pb-4 text-left">Posisi</th><th class="pb-4 text-center">Predikat</th><th class="pb-4 text-center">Total Nilai</th></tr>
+                                </thead>
+                                <tbody id="rankingKaryawan" class="text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="category-section">
+                        <h3 class="text-lg font-bold mb-4 text-[var(--primary)]">🎯 Freelance</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="text-[10px] uppercase text-[var(--text-muted)] border-b border-[var(--border)]">
+                                    <tr><th class="pb-4 text-left">Nama</th><th class="pb-4 text-left">Outlet</th><th class="pb-4 text-left">Posisi</th><th class="pb-4 text-center">Predikat</th><th class="pb-4 text-center">Total Nilai</th></tr>
+                                </thead>
+                                <tbody id="rankingFreelance" class="text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <div id="submitContainer" class="fixed bottom-8 right-8 z-[50] opacity-0 translate-y-10 transition-all pointer-events-none">
+        <button id="btnSubmit" class="btn-accent px-10 py-5 font-black shadow-2xl flex items-center gap-3">SIMPAN DATA</button>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbzOlgoisffrCC2hAFJ8bfiytLsF2yPdvHh-4DTTAvjhZ4VU6vx4G-eXcEnyPxKa_g/exec";
+        const DB_KEY = "EGG_DASHBOARD_DB";
+        const MANAGER_PASS = "EGG2026";
+        
+        let userData = [], activeCsel = null;
+        const opsiNilai  = ['A (Sangat Baik)', 'B (Baik)', 'C (Cukup)', 'D (Kurang)', 'E (Sangat Kurang)'];
+        const opsiSholat = ['Tidak Pernah', 'Jarang', '5 Waktu', 'Tepat Waktu'];
+        const opsiPuasa  = ['Tidak Dinilai', 'Tidak Pernah', 'Bolong', 'Full'];
+        
+        const VALUE_COLORS = {
+            'A (Sangat Baik)': '#22c55e',
+            'B (Baik)':        '#3b82f6',
+            'C (Cukup)':       '#f59e0b',
+            'D (Kurang)':      '#f97316',
+            'E (Sangat Kurang)': '#ef4444',
+            'Tepat Waktu':     '#22c55e',
+            '5 Waktu':         '#3b82f6',
+            'Jarang':          '#f97316',
+            'Tidak Pernah':    '#ef4444',
+            'Full':            '#22c55e',
+            'Bolong':          '#f97316',
+            'Tidak Dinilai':   '#9ca3af',
+        };
+        
+        // Predicate conversion functions
+        function predicateToNumber(predicate) {
+            const mapping = {
+                'A (Sangat Baik)': 5,
+                'B (Baik)': 4,
+                'C (Cukup)': 3,
+                'D (Kurang)': 2,
+                'E (Sangat Kurang)': 1
+            };
+            return mapping[predicate] || 0;
+        }
+        
+        function numberToPredicate(num) {
+            if (num >= 4.5) return 'A (Sangat Baik)';
+            if (num >= 3.5) return 'B (Baik)';
+            if (num >= 2.5) return 'C (Cukup)';
+            if (num >= 1.5) return 'D (Kurang)';
+            return 'E (Sangat Kurang)';
+        }
+
+        // Enhanced draft management with time tracking
+        function isRecentlyEvaluated(evaluator, employee, savedData, days = 30) {
+            if (!savedData) return false;
+            
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+            
+            return savedData.some(item => 
+                item.penilai === evaluator && 
+                item.yangDinilai === employee && 
+                item.timestamp && 
+                new Date(item.timestamp) > cutoffDate
+            );
+        }
+
+        // Check if employee has any evaluation (regardless of age)
+        function hasEvaluation(evaluator, employee, savedData) {
+            if (!savedData) return false;
+            
+            return savedData.some(item => 
+                item.penilai === evaluator && 
+                item.yangDinilai === employee
+            );
+        }
+
+        // Clean up old data (older than 1 month)
+        function cleanupOldData() {
+            const raw = localStorage.getItem(DB_KEY);
+            if (!raw) return;
+            
+            const data = JSON.parse(raw);
+            const cutoffDate = new Date();
+            cutoffDate.setMonth(cutoffDate.getMonth() - 1); // 1 month ago
+            
+            const filteredEvaluations = data.evaluations.filter(item => {
+                return item.timestamp && new Date(item.timestamp) > cutoffDate;
+            });
+            
+            localStorage.setItem(DB_KEY, JSON.stringify({ 
+                evaluations: filteredEvaluations 
+            }));
+        }
+        
+        function saveDraft(evaluator, employee, draftData) {
+            const draftKey = `EGG_DRAFT_${evaluator}_${employee}`;
+            const draftObj = {
+                ...draftData,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem(draftKey, JSON.stringify(draftObj));
+        }
+        
+        function loadDraft(evaluator, employee) {
+            const draftKey = `EGG_DRAFT_${evaluator}_${employee}`;
+            const saved = localStorage.getItem(draftKey);
+            if (!saved) return null;
+            
+            const draft = JSON.parse(saved);
+            // Remove drafts older than 7 days
+            const draftDate = new Date(draft.timestamp);
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - 7);
+            
+            if (draftDate < cutoffDate) {
+                localStorage.removeItem(draftKey);
+                return null;
+            }
+            
+            return draft;
+        }
+        
+        function categorizeByPosition(position) {
+            const pos = position.toUpperCase();
+            if (pos.includes('MANAGER')) return 'Manager';
+            if (pos.includes('SPV') || pos.includes('SUPERVISOR')) return 'SPV';
+            if (pos.includes('FREELANCE') || pos.includes('FREELANCER')) return 'Freelance';
+            if (pos.includes('OUTLET')) return 'Outlet';
+            return 'Karyawan';
+        }
+        
+        function updateDraft(index) {
+            const evaluator = document.getElementById('selectedName').innerText;
+            const employee = userData[index].nama;
+            const keys = ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','at5','sholat','puasa'];
+            const draftData = {};
+            
+            keys.forEach(k => {
+                const el = document.getElementById(`${k}-${index}`);
+                draftData[k] = el ? el.value : '';
+            });
+            
+            const hasAny = keys.some(k => draftData[k]);
+            if (hasAny) {
+                saveDraft(evaluator, employee, draftData);
+            }
+        }
+        
+        function restoreDraft(index) {
+            const evaluator = document.getElementById('selectedName').innerText;
+            const employee = userData[index].nama;
+            const draft = loadDraft(evaluator, employee);
+            
+            if (!draft) return;
+            
+            ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','at5','sholat','puasa'].forEach(key => {
+                const fullId = `${key}-${index}`;
+                if (draft[key]) {
+                    const el = document.getElementById(fullId);
+                    const btn = document.getElementById(`btn-${fullId}`);
+                    if (el && btn) {
+                        el.value = draft[key];
+                        const color = VALUE_COLORS[draft[key]];
+                        btn.innerHTML = `<span style="color: ${color || 'var(--text)'}">${draft[key]}</span>`;
+                        btn.style.borderColor = color || 'var(--border)';
+                    }
+                }
+            });
+        }
+        
+        function updateCardAverage(index) {
+            const keys = ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','at5'];
+            const scores = [];
+            
+            keys.forEach(k => {
+                const el = document.getElementById(`${k}-${index}`);
+                if (el && el.value) {
+                    scores.push(predicateToNumber(el.value));
+                }
+            });
+            
+            const avgEl = document.getElementById(`avg-${index}`);
+            if (scores.length > 0 && avgEl) {
+                const avg = scores.reduce((a,b) => a+b, 0) / scores.length;
+                const predicate = numberToPredicate(avg);
+                const color = VALUE_COLORS[predicate];
+                avgEl.innerHTML = `<span style="color: ${color}">${predicate.charAt(0)}</span>`;
+                avgEl.title = `Rata-rata: ${predicate}`;
+            } else if (avgEl) {
+                avgEl.innerHTML = '<span class="text-gray-400">-</span>';
+            }
+        }
+
+        window.onload = async () => {
+            checkTheme();
+            // Clean up old data (older than 1 month)
+            cleanupOldData();
+            const res = await fetch(API_URL + "?action=getUsers");
+            const result = await res.json();
+            const evals = result.data.filter(u => u.posisi.toUpperCase().includes('MANAGER') || u.posisi.toUpperCase().includes('SPV'));
+            document.getElementById('evaluatorList').innerHTML = evals.map(u => `
+                <div class="p-4 hover:bg-[var(--surface2)] cursor-pointer" onclick="selectEvaluator('${u.nama}')">
+                    <span class="font-bold text-sm block">${u.nama}</span>
+                    <span class="text-[9px] text-[var(--text-muted)] uppercase">${u.posisi}</span>
+                </div>
+            `).join('');
+        };
+
+        async function switchTab(tab) {
+            if (tab === 'leaderboard' || tab === 'ranking') {
+                if (!sessionStorage.getItem('EGG_AUTH')) {
+                    const pass = prompt("Password Manager:");
+                    if (pass === MANAGER_PASS) sessionStorage.setItem('EGG_AUTH', 'true');
+                    else return alert("Salah!");
+                }
+                if (tab === 'leaderboard') await renderLeaderboard();
+                if (tab === 'ranking') await renderRanking();
+            }
+            const isP = tab === 'penilaian';
+            const isL = tab === 'leaderboard';
+            const isR = tab === 'ranking';
+            
+            document.getElementById('penilaianContent').classList.toggle('hidden', !isP);
+            document.getElementById('leaderboardSection').classList.toggle('hidden', !isL);
+            document.getElementById('rankingSection').classList.toggle('hidden', !isR);
+            
+            document.getElementById('tab-p').className = isP ? "px-6 py-3 rounded-2xl font-bold bg-[var(--primary)] text-white shadow-lg" : "px-6 py-3 rounded-2xl font-bold bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)]";
+            document.getElementById('tab-l').className = isL ? "px-6 py-3 rounded-2xl font-bold bg-[var(--primary)] text-white shadow-lg flex items-center gap-2" : "px-6 py-3 rounded-2xl font-bold bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)] flex items-center gap-2";
+            document.getElementById('tab-r').className = isR ? "px-6 py-3 rounded-2xl font-bold bg-[var(--primary)] text-white shadow-lg flex items-center gap-2" : "px-6 py-3 rounded-2xl font-bold bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)] flex items-center gap-2";
+        }
+
+        async function selectEvaluator(name) {
+            document.getElementById('selectedName').innerText = name;
+            document.getElementById('selectMenu').classList.add('hidden');
+            const res = await fetch(API_URL + "?action=getUsers&penilai=" + encodeURIComponent(name));
+            const result = await res.json();
+            userData = result.data;
+            await renderCards();
+            // Restore drafts and calculate averages
+            userData.forEach((u, i) => {
+                restoreDraft(i);
+                updateCardAverage(i);
+            });
+            document.getElementById('matrixSection').classList.remove('opacity-30', 'pointer-events-none');
+            document.getElementById('submitContainer').classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
+        }
+
+        async function renderCards() {
+            const evaluator = document.getElementById('selectedName').innerText;
+            const savedData = await loadEvaluationsFromAPI();
+            
+            document.getElementById('karyawanContainer').innerHTML = userData.map((u, i) => {
+                const hasEval = hasEvaluation(evaluator, u.nama, savedData);
+                const isRecentEval = isRecentlyEvaluated(evaluator, u.nama, savedData);
+                const draft = loadDraft(evaluator, u.nama);
+                const category = categorizeByPosition(u.posisi);
+                
+                // Find existing evaluation data
+                const existingEval = savedData.find(item => 
+                    item.penilai === evaluator && item.yangDinilai === u.nama
+                );
+                
+                let statusBadge = '';
+                let statusClass = '';
+                let showFields = true;
+                
+                if (hasEval && existingEval) {
+                    if (isRecentEval) {
+                        statusBadge = 'Sudah Dinilai';
+                        statusClass = 'bg-green-100 text-green-700 border-green-300';
+                    } else {
+                        statusBadge = 'Data Lama (>30 hari)';
+                        statusClass = 'bg-gray-100 text-gray-600 border-gray-300';
+                    }
+                    showFields = false;
+                } else if (draft) {
+                    statusBadge = 'Draft Tersimpan';
+                    statusClass = 'bg-orange-100 text-orange-700 border-orange-300';
+                } else {
+                    statusBadge = 'Belum Dinilai';
+                    statusClass = 'bg-blue-100 text-blue-700 border-blue-300';
+                }
+                
+                return `
+                <div class="card p-6 ${hasEval ? 'opacity-90' : ''}">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-[var(--primary)] text-white flex items-center justify-center font-bold">${u.nama.charAt(0)}</div>
+                            <div>
+                                <h3 class="font-bold text-sm">${u.nama}</h3>
+                                <p class="text-[9px] uppercase font-black text-[var(--text-muted)]">${u.posisi}</p>
+                                <span class="text-[8px] px-2 py-1 rounded-full border ${statusClass}">${statusBadge}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[8px] font-bold text-[var(--text-muted)] block">${category}</span>
+                            <div id="avg-${i}" class="text-lg font-black"></div>
+                        </div>
+                    </div>
+                    ${showFields ? generateFields(i) : `
+                        <div class="space-y-3">
+                            ${existingEval ? `
+                                <div class="bg-[var(--surface2)] p-4 rounded-xl">
+                                    <p class="text-xs font-bold text-[var(--text-muted)] mb-2">Data Evaluasi Tersimpan:</p>
+                                    <div class="grid grid-cols-3 gap-2 text-xs">
+                                        <div><span class="font-bold">Sholat:</span> ${existingEval.sholat}</div>
+                                        <div><span class="font-bold">Puasa:</span> ${existingEval.puasa === 'Tidak Dinilai' ? 'N/A (di luar Ramadhan)' : existingEval.puasa}</div>
+                                        <div><span class="font-bold">Tanggal:</span> ${new Date(existingEval.timestamp).toLocaleDateString('id-ID')}</div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            <div class="text-center py-4 text-[var(--text-muted)] text-sm">
+                                ${isRecentEval ? 'Sudah dinilai dalam 30 hari terakhir' : hasEval ? 'Data evaluasi tersimpan (lebih dari 30 hari)' : 'Data tersimpan sebagai draft'}
+                            </div>
+                        </div>
+                    `}
+                </div>
+                `;
+            }).join('');
+            
+            // Restore drafts and calculate averages
+            userData.forEach((u, i) => {
+                restoreDraft(i);
+                updateCardAverage(i);
+                
+                // Load existing evaluation data if available
+                const existingEval = savedData.find(item => 
+                    item.penilai === evaluator && item.yangDinilai === u.nama
+                );
+                
+                if (existingEval) {
+                    ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','at5','sholat','puasa'].forEach(key => {
+                        if (existingEval[key] && existingEval[key] !== '-') {
+                            const fullId = `${key}-${i}`;
+                            const el = document.getElementById(fullId);
+                            const btn = document.getElementById(`btn-${fullId}`);
+                            if (el && btn) {
+                                el.value = existingEval[key];
+                                const color = VALUE_COLORS[existingEval[key]];
+                                btn.innerHTML = `<span style="color: ${color || 'var(--text)'}">${existingEval[key]}</span>`;
+                                btn.style.borderColor = color || 'var(--border)';
+                            }
+                        }
+                    });
+                    updateCardAverage(i);
+                }
+            });
+        }
+
+        function generateFields(index) {
+            const shortLabels = {
+                'ss1': 'Komunikasi', 'ss2': 'Kerja Sama', 'ss3': 'Tanggung Jawab', 'ss4': 'Inisiatif',
+                'hs1': 'Penguasaan SOP', 'hs2': 'Ketelitian', 'hs3': 'Skill Alat', 'hs4': 'Konsistensi',
+                'at1': 'Kehadiran', 'at2': 'Kepatuhan', 'at3': 'Etika', 'at4': 'Lingkungan', 'at5': 'Pelayanan'
+            };
+            const cats = [{ k: 'ss', c: 4 }, { k: 'hs', c: 4 }, { k: 'at', c: 5 }];
+            let html = `<div class="grid grid-cols-2 gap-x-4 gap-y-3">`;
+            cats.forEach(cat => {
+                for (let i = 1; i <= cat.c; i++) {
+                    const id = `${cat.k}${i}`;
+                    html += `<div class="space-y-1">
+                        <label class="text-[10px] font-semibold text-[var(--text-muted)] ml-1">${shortLabels[id]}</label>
+                        ${makeCsel(`${id}-${index}`, opsiNilai, 'Nilai...')}
+                    </div>`;
+                }
+            });
+            html += `<div class="space-y-1"><label class="text-[10px] font-semibold text-[var(--text-muted)] ml-1">Sholat</label>${makeCsel(`sholat-${index}`, opsiSholat, 'Pilih...')}</div>
+                     <div class="space-y-1"><label class="text-[10px] font-semibold text-[var(--text-muted)] ml-1">Puasa</label>${makeCsel(`puasa-${index}`, opsiPuasa, 'Pilih...')}</div></div>`;
+            return html;
+        }
+
+        function makeCsel(id, opts, p) {
+            return `<div class="relative"><input type="hidden" id="${id}"><button onclick="toggleCsel('${id}', event)" id="btn-${id}" class="csel-btn"><span>${p}</span></button>
+            <div id="menu-${id}" class="csel-menu hidden">${opts.map(o => `<div class="csel-item" onclick="setCsel('${id}','${o}')">${o}</div>`).join('')}</div></div>`;
+        }
+
+        function toggleCsel(id, e) {
+            e.stopPropagation();
+            const m = document.getElementById(`menu-${id}`);
+            if(activeCsel && activeCsel !== id) document.getElementById(`menu-${activeCsel}`).classList.add('hidden');
+            m.classList.toggle('hidden'); activeCsel = m.classList.contains('hidden') ? null : id;
+        }
+
+        function setCsel(id, v) {
+            document.getElementById(id).value = v;
+            const btn = document.getElementById(`btn-${id}`);
+            const color = VALUE_COLORS[v];
+            btn.innerHTML = `<span style="color: ${color || 'var(--text)'}">${v}</span>`;
+            btn.style.borderColor = color || 'var(--border)';
+            document.getElementById(`menu-${id}`).classList.add('hidden');
+            activeCsel = null;
+            
+            // Update draft and average
+            const index = id.split('-')[1];
+            updateDraft(index);
+            updateCardAverage(index);
+        }
+
+        async function renderLeaderboard() {
+            const data = await loadEvaluationsFromAPI();
+            
+            // Group by employee and calculate averages (same as ranking)
+            const employeeMap = {};
+            data.forEach(item => {
+                const name = item.yangDinilai;
+                
+                if (!employeeMap[name]) {
+                    employeeMap[name] = {
+                        name: name,
+                        position: item.posisi || '',
+                        outlet: item.outlet || '-',
+                        evaluators: {},
+                        allScores: []
+                    };
+                }
+                
+                const scores = [item.ss1, item.ss2, item.ss3, item.ss4, item.hs1, item.hs2, item.hs3, item.hs4, item.at1, item.at2, item.at3, item.at4, item.at5]
+                    .filter(s => s && s !== '-')
+                    .map(predicateToNumber);
+                
+                if (scores.length > 0) {
+                    const evaluatorAvg = scores.reduce((a,b) => a+b, 0) / scores.length;
+                    employeeMap[name].evaluators[item.penilai] = {
+                        average: evaluatorAvg,
+                        predicate: numberToPredicate(evaluatorAvg),
+                        scores: scores,
+                        evaluation: item
+                    };
+                    employeeMap[name].allScores.push(...scores);
+                }
+            });
+            
+            // Calculate final averages and create leaderboard data
+            const leaderboardData = Object.values(employeeMap).map(emp => {
+                const avgScore = emp.allScores.reduce((a,b) => a+b, 0) / emp.allScores.length;
+                return {
+                    name: emp.name,
+                    position: emp.position,
+                    outlet: emp.outlet,
+                    average: avgScore,
+                    predicate: numberToPredicate(avgScore),
+                    evaluatorCount: Object.keys(emp.evaluators).length,
+                    evaluators: emp.evaluators
+                };
+            }).sort((a, b) => b.average - a.average);
+            
+            // Render leaderboard with dropdown details
+            document.getElementById('leaderboardBody').innerHTML = leaderboardData.map((item, index) => {
+                const color = VALUE_COLORS[item.predicate];
+                const rank = index + 1;
+                
+                return `
+                    <tr class="border-b border-[var(--border)]">
+                        <td class="py-4 font-bold">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg font-black text-[var(--text-muted)] mr-2">#${rank}</span>
+                                <span>${item.name}</span>
+                                ${item.evaluatorCount > 1 ? `
+                                    <button onclick="toggleLeaderboardDetail('${item.name}')" class="text-xs bg-[var(--primary)] text-white px-2 py-1 rounded-full hover:bg-[var(--primary-light)]">
+                                        ${item.evaluatorCount} Penilai
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                        <td class="py-4 text-center font-black text-lg" style="color: ${color}">${item.predicate}</td>
+                        <td class="py-4 text-[10px] text-[var(--text-muted)]">Avg: ${item.average.toFixed(2)}</td>
+                        <td class="py-4 text-right font-bold text-[var(--text-muted)]">${item.evaluatorCount} evaluator${item.evaluatorCount > 1 ? 's' : ''}</td>
+                    </tr>
+                    <tr id="leaderboard-detail-${item.name.replace(/\s+/g, '-')}" class="hidden bg-[var(--surface2)]">
+                        <td colspan="4" class="p-4">
+                            <div class="space-y-2">
+                                <p class="text-xs font-bold text-[var(--text-muted)]">Detail per Penilai:</p>
+                                ${Object.entries(item.evaluators).map(([evaluator, data]) => {
+                                    const evalColor = VALUE_COLORS[data.predicate];
+                                    return `
+                                        <div class="flex justify-between items-center bg-[var(--surface)] p-3 rounded-lg">
+                                            <div>
+                                                <span class="font-bold text-sm">${evaluator}</span>
+                                                <span class="text-xs text-[var(--text-muted)] ml-2">S: ${data.evaluation.sholat} / P: ${data.evaluation.puasa === 'Tidak Dinilai' ? 'N/A' : data.evaluation.puasa}</span>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="font-bold text-lg" style="color: ${evalColor}">${data.predicate}</span>
+                                                <span class="text-xs text-[var(--text-muted)] block">Avg: ${data.average.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function toggleLeaderboardDetail(employeeName) {
+            const detailId = `leaderboard-detail-${employeeName.replace(/\s+/g, '-')}`;
+            const detailRow = document.getElementById(detailId);
+            detailRow.classList.toggle('hidden');
+        }
+
+        async function exportToExcel() {
+            const data = await loadEvaluationsFromAPI();
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Rekap");
+            XLSX.writeFile(wb, `EGG_Report.xlsx`);
+        }
+
+        async function renderRanking() {
+            const data = await loadEvaluationsFromAPI();
+            
+            // Group by employee and calculate averages
+            const employeeMap = {};
+            data.forEach(item => {
+                const name = item.yangDinilai;
+                const category = item.category || categorizeByPosition(item.posisi || '');
+                
+                if (!employeeMap[name]) {
+                    employeeMap[name] = {
+                        name: name,
+                        position: item.posisi || '',
+                        category: category,
+                        outlet: item.outlet || '-',
+                        evaluators: {},
+                        allScores: []
+                    };
+                }
+                
+                const scores = [item.ss1, item.ss2, item.ss3, item.ss4, item.hs1, item.hs2, item.hs3, item.hs4, item.at1, item.at2, item.at3, item.at4, item.at5]
+                    .filter(s => s && s !== '-')
+                    .map(predicateToNumber);
+                
+                if (scores.length > 0) {
+                    const evaluatorAvg = scores.reduce((a,b) => a+b, 0) / scores.length;
+                    employeeMap[name].evaluators[item.penilai] = {
+                        average: evaluatorAvg,
+                        predicate: numberToPredicate(evaluatorAvg),
+                        scores: scores,
+                        evaluation: item
+                    };
+                    employeeMap[name].allScores.push(...scores);
+                }
+            });
+            
+            // Calculate final averages and create ranking data
+            const rankingData = Object.values(employeeMap).map(emp => {
+                const avgScore = emp.allScores.reduce((a,b) => a+b, 0) / emp.allScores.length;
+                const totalScore = emp.allScores.reduce((a,b) => a+b, 0);
+                return {
+                    name: emp.name,
+                    position: emp.position,
+                    category: emp.category,
+                    outlet: emp.outlet,
+                    average: avgScore,
+                    totalScore: totalScore,
+                    predicate: numberToPredicate(avgScore),
+                    evaluatorCount: Object.keys(emp.evaluators).length,
+                    evaluators: emp.evaluators
+                };
+            });
+            
+            // Group by category and sort
+            const categories = ['SPV', 'Karyawan', 'Freelance'];
+            
+            categories.forEach(category => {
+                const categoryData = rankingData
+                    .filter(item => item.category === category)
+                    .sort((a, b) => b.average - a.average);
+                
+                const tbodyId = `ranking${category}`;
+                const tbody = document.getElementById(tbodyId);
+                
+                if (tbody) {
+                    tbody.innerHTML = categoryData.map((item, index) => {
+                        const color = VALUE_COLORS[item.predicate];
+                        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+                        const evaluatorNames = Object.keys(item.evaluators).join(', ');
+                        
+                        return `
+                            <tr class="border-b border-[var(--border)]">
+                                <td class="py-4 font-bold">
+                                    <div class="flex items-center gap-2">
+                                        <span>${medal} ${item.name}</span>
+                                        ${item.evaluatorCount > 1 ? `
+                                            <button onclick="toggleEvaluatorDetail('${item.name}')" class="text-xs bg-[var(--primary)] text-white px-2 py-1 rounded-full hover:bg-[var(--primary-light)]">
+                                                ${item.evaluatorCount} Penilai
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </td>
+                                <td class="py-4">${item.outlet}</td>
+                                <td class="py-4">${item.position}</td>
+                                <td class="py-4 text-center font-black text-lg" style="color: ${color}">${item.predicate}</td>
+                                <td class="py-4 text-center font-bold">${item.totalScore.toFixed(1)}</td>
+                            </tr>
+                            <tr id="detail-${item.name.replace(/\s+/g, '-')}" class="hidden bg-[var(--surface2)]">
+                                <td colspan="5" class="p-4">
+                                    <div class="space-y-2">
+                                        <p class="text-xs font-bold text-[var(--text-muted)]">Detail per Penilai:</p>
+                                        ${Object.entries(item.evaluators).map(([evaluator, data]) => {
+                                            const evalColor = VALUE_COLORS[data.predicate];
+                                            return `
+                                                <div class="flex justify-between items-center bg-[var(--surface)] p-3 rounded-lg">
+                                                    <div>
+                                                        <span class="font-bold text-sm">${evaluator}</span>
+                                                        <span class="text-xs text-[var(--text-muted)] ml-2">${data.evaluation.sholat} / ${data.evaluation.puasa === 'Tidak Dinilai' ? 'N/A' : data.evaluation.puasa}</span>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <span class="font-bold text-lg" style="color: ${evalColor}">${data.predicate}</span>
+                                                        <span class="text-xs text-[var(--text-muted)] block">Avg: ${data.average.toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            });
+        }
+        
+        function toggleEvaluatorDetail(employeeName) {
+            const detailId = `detail-${employeeName.replace(/\s+/g, '-')}`;
+            const detailRow = document.getElementById(detailId);
+            detailRow.classList.toggle('hidden');
+        }
+
+        async function exportRankingExcel() {
+            const data = await loadEvaluationsFromAPI();
+            
+            // Process data similar to renderRanking
+            const employeeMap = {};
+            data.forEach(item => {
+                const name = item.yangDinilai;
+                const category = item.category || categorizeByPosition(item.posisi || '');
+                
+                if (!employeeMap[name]) {
+                    employeeMap[name] = {
+                        name: name,
+                        position: item.posisi || '',
+                        category: category,
+                        scores: [],
+                        evaluations: []
+                    };
+                }
+                
+                const scores = [item.ss1, item.ss2, item.ss3, item.ss4, item.hs1, item.hs2, item.hs3, item.hs4, item.at1, item.at2, item.at3, item.at4, item.at5]
+                    .filter(s => s && s !== '-')
+                    .map(predicateToNumber);
+                
+                if (scores.length > 0) {
+                    employeeMap[name].scores.push(...scores);
+                    employeeMap[name].evaluations.push(item);
+                }
+            });
+            
+            const rankingData = Object.values(employeeMap).map(emp => {
+                const avgScore = emp.scores.reduce((a,b) => a+b, 0) / emp.scores.length;
+                const totalScore = emp.scores.reduce((a,b) => a+b, 0);
+                return {
+                    'Nama': emp.name,
+                    'Outlet': emp.evaluations[0]?.outlet || '-',
+                    'Posisi': emp.position,
+                    'Kategori': emp.category,
+                    'Rata-rata Score': avgScore.toFixed(2),
+                    'Predikat': numberToPredicate(avgScore),
+                    'Total Nilai': totalScore.toFixed(1),
+                    'Jumlah Evaluasi': emp.evaluations.length
+                };
+            }).sort((a, b) => b['Rata-rata Score'] - a['Rata-rata Score']);
+            
+            const ws = XLSX.utils.json_to_sheet(rankingData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Ranking");
+            XLSX.writeFile(wb, `EGG_Ranking.xlsx`);
+        }
+
+        document.getElementById('btnSubmit').onclick = async () => {
+            const penilai = document.getElementById('selectedName').innerText;
+            let batch = [];
+            userData.forEach((u, i) => {
+                const ss1 = document.getElementById(`ss1-${i}`).value;
+                if(!ss1) return;
+                let obj = { 
+                    penilai, 
+                    yangDinilai: u.nama,
+                    posisi: u.posisi,
+                    outlet: u.outlet || '-',
+                    category: categorizeByPosition(u.posisi),
+                    timestamp: new Date().toISOString()
+                };
+                ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','at5','sholat','puasa'].forEach(k => {
+                    obj[k] = document.getElementById(`${k}-${i}`).value || "-";
+                });
+                batch.push(obj);
+            });
+            
+            // Save to API
+            for (const evaluation of batch) {
+                await saveEvaluationToAPI(evaluation);
+            }
+            
+            // Clear drafts after successful submission
+            batch.forEach(item => {
+                const draftKey = `EGG_DRAFT_${item.penilai}_${item.yangDinilai}`;
+                localStorage.removeItem(draftKey);
+            });
+            
+            alert("Data Disimpan!"); 
+            location.reload();
+        };
+
+// API Functions for Google Sheets integration
+async function loadEvaluationsFromAPI() {
+    try {
+        const response = await fetch(API_URL + "?action=getEvaluations");
+        const result = await response.json();
+        return result.status === "success" ? result.data : [];
+    } catch (error) {
+        console.error("Failed to load evaluations from API:", error);
+        return [];
+    }
+}
+
+async function saveEvaluationToAPI(evaluation) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: "saveEvaluation",
+                data: evaluation
+            })
+        });
+        const result = await response.json();
+        return result.status === "success";
+    } catch (error) {
+        console.error("Failed to save evaluation to API:", error);
+        return false;
+    }
+}
+
+document.getElementById('btnSubmit').onclick = async () => {
+    const penilai = document.getElementById('selectedName').innerText;
+    let batch = [];
+    userData.forEach((u, i) => {
+        const ss1 = document.getElementById(`ss1-${i}`).value;
+        if(!ss1) return;
+        let obj = { 
+            penilai, 
+            yangDinilai: u.nama,
+            posisi: u.posisi,
+            outlet: u.outlet || '-',
+            category: categorizeByPosition(u.posisi),
+            timestamp: new Date().toISOString()
+        };
+        ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','at5','sholat','puasa'].forEach(k => {
+            obj[k] = document.getElementById(`${k}-${i}`).value || "-";
+        });
+        batch.push(obj);
+    });
+    
+    // Save to API
+    for (const evaluation of batch) {
+        await saveEvaluationToAPI(evaluation);
+    }
+    
+    // Clear drafts after successful submission
+    batch.forEach(item => {
+        const draftKey = `EGG_DRAFT_${item.penilai}_${item.yangDinilai}`;
+        localStorage.removeItem(draftKey);
+    });
+    
+    alert("Data Disimpan!"); 
+    location.reload();
+};
+
+function toggleTheme() { document.getElementById('htmlRoot').classList.toggle('dark'); localStorage.setItem('EGG_THEME', document.getElementById('htmlRoot').classList.contains('dark') ? 'dark' : 'light'); checkTheme(); }
+function checkTheme() { const isD = localStorage.getItem('EGG_THEME') === 'dark'; if(isD) document.getElementById('htmlRoot').classList.add('dark'); document.getElementById('iconSun').classList.toggle('hidden', !isD); document.getElementById('iconMoon').classList.toggle('hidden', isD); }
+document.getElementById('selectButton').onclick = (e) => { e.stopPropagation(); document.getElementById('selectMenu').classList.toggle('hidden'); };
+document.addEventListener('click', () => { document.getElementById('selectMenu').classList.add('hidden'); if(activeCsel) document.getElementById(`menu-${activeCsel}`).classList.add('hidden'); activeCsel = null; });
+    </script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 
 var CONFIG = {
   SHEET_MASTER: "Master_List",
-  SHEET_DB: "DB_Penilaian"
+  SHEET_DB: "DB_Penilaian New"
 };
 
 // =========================================================================

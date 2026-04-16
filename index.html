@@ -446,8 +446,8 @@
                 
                 let statusBadge = '';
                 let statusClass = '';
-                let showFields = true;
-                let showToggle = false;
+                let showFields = false;
+                let showToggle = true;
                 
                 if (hasEval && existingEval) {
                     if (isRecentEval) {
@@ -457,8 +457,6 @@
                         statusBadge = 'Data Lama (>30 hari)';
                         statusClass = 'bg-gray-100 text-gray-600 border-gray-300';
                     }
-                    showFields = false;
-                    showToggle = true;
                 } else if (draft) {
                     statusBadge = 'Draft Tersimpan';
                     statusClass = 'bg-orange-100 text-orange-700 border-orange-300';
@@ -468,9 +466,9 @@
                 }
                 
                 return `
-                <div class="card p-6 ${hasEval ? 'opacity-90' : ''}" id="card-${i}">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-4">
+                <div class="card p-4 ${hasEval ? 'opacity-90' : ''}" id="card-${i}" onclick="toggleCard(${i})" style="cursor: pointer;">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-[var(--primary)] text-white flex items-center justify-center font-bold">${u.nama.charAt(0)}</div>
                             <div>
                                 <h3 class="font-bold text-sm">${u.nama}</h3>
@@ -483,27 +481,19 @@
                             <div id="avg-${i}" class="text-lg font-black"></div>
                         </div>
                     </div>
-                    <div id="fields-${i}" class="${showFields ? '' : 'hidden'}">
-                        ${showFields ? generateFields(i) : ''}
+                    <div id="fields-${i}" class="hidden mt-4">
+                        ${generateFields(i)}
                     </div>
-                    ${showToggle ? `
-                        <div class="space-y-3" id="summary-${i}">
-                            ${existingEval ? `
-                                <div class="bg-[var(--surface2)] p-4 rounded-xl">
-                                    <p class="text-xs font-bold text-[var(--text-muted)] mb-2">Data Evaluasi Tersimpan:</p>
-                                    <div class="grid grid-cols-3 gap-2 text-xs">
-                                        <div><span class="font-bold">Sholat:</span> ${existingEval.sholat}</div>
-                                        <div><span class="font-bold">Puasa:</span> ${existingEval.puasa === 'Tidak Dinilai' ? 'N/A (di luar Ramadhan)' : existingEval.puasa}</div>
-                                        <div><span class="font-bold">Tanggal:</span> ${new Date(existingEval.timestamp).toLocaleDateString('id-ID')}</div>
-                                    </div>
+                    ${showToggle && hasEval && existingEval ? `
+                        <div class="space-y-3 mt-4" id="summary-${i}">
+                            <div class="bg-[var(--surface2)] p-4 rounded-xl">
+                                <p class="text-xs font-bold text-[var(--text-muted)] mb-2">Data Evaluasi Tersimpan:</p>
+                                <div class="grid grid-cols-3 gap-2 text-xs">
+                                    <div><span class="font-bold">Sholat:</span> ${existingEval.sholat}</div>
+                                    <div><span class="font-bold">Puasa:</span> ${existingEval.puasa === 'Tidak Dinilai' ? 'N/A (di luar Ramadhan)' : existingEval.puasa}</div>
+                                    <div><span class="font-bold">Tanggal:</span> ${new Date(existingEval.timestamp).toLocaleDateString('id-ID')}</div>
                                 </div>
-                            ` : ''}
-                            <div class="text-center py-4 text-[var(--text-muted)] text-sm">
-                                ${isRecentEval ? 'Sudah dinilai dalam 30 hari terakhir' : hasEval ? 'Data evaluasi tersimpan (lebih dari 30 hari)' : 'Data tersimpan sebagai draft'}
                             </div>
-                            <button onclick="toggleCard(${i})" class="w-full py-2 text-xs font-bold text-[var(--primary)] border border-[var(--primary)] rounded-lg hover:bg-[var(--primary)] hover:text-white transition">
-                                ${showFields ? 'Tutup Form' : 'Buka untuk Edit'}
-                            </button>
                         </div>
                     ` : ''}
                 </div>
@@ -592,16 +582,15 @@
         function toggleCard(index) {
             const fieldsDiv = document.getElementById(`fields-${index}`);
             const summaryDiv = document.getElementById(`summary-${index}`);
-            const toggleBtn = summaryDiv.querySelector('button');
             
             if (fieldsDiv.classList.contains('hidden')) {
-                // Show fields, hide summary
+                // Show fields
                 fieldsDiv.classList.remove('hidden');
-                summaryDiv.classList.add('hidden');
+                if (summaryDiv) summaryDiv.classList.add('hidden');
             } else {
-                // Hide fields, show summary
+                // Hide fields
                 fieldsDiv.classList.add('hidden');
-                summaryDiv.classList.remove('hidden');
+                if (summaryDiv) summaryDiv.classList.remove('hidden');
             }
         }
 
@@ -936,49 +925,73 @@
         }
 
         document.getElementById('btnSubmit').onclick = async () => {
-            const penilai = document.getElementById('selectedName').innerText;
-            let batch = [];
-            userData.forEach((u, i) => {
-                const ss1 = document.getElementById(`ss1-${i}`).value;
-                if(!ss1) return;
-                let obj = { 
-                    penilai, 
-                    yangDinilai: u.nama,
-                    posisi: u.posisi,
-                    outlet: u.outlet || '-',
-                    category: categorizeByPosition(u.posisi),
-                    timestamp: new Date().toISOString()
-                };
-                ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','at5','sholat','puasa'].forEach(k => {
-                    obj[k] = document.getElementById(`${k}-${i}`).value || "-";
+            const btn = document.getElementById('btnSubmit');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Menyimpan...';
+            btn.disabled = true;
+            
+            try {
+                const penilai = document.getElementById('selectedName').innerText;
+                let batch = [];
+                userData.forEach((u, i) => {
+                    const ss1 = document.getElementById(`ss1-${i}`).value;
+                    if(!ss1) return;
+                    let obj = { 
+                        penilai, 
+                        yangDinilai: u.nama,
+                        posisi: u.posisi,
+                        outlet: u.outlet || '-',
+                        category: categorizeByPosition(u.posisi),
+                        timestamp: new Date().toISOString()
+                    };
+                    ['ss1','ss2','ss3','ss4','hs1','hs2','hs3','hs4','at1','at2','at3','at4','at5','sholat','puasa'].forEach(k => {
+                        obj[k] = document.getElementById(`${k}-${i}`).value || "-";
+                    });
+                    batch.push(obj);
                 });
-                batch.push(obj);
-            });
-            
-            // Save to API
-            let successCount = 0;
-            let failCount = 0;
-            for (const evaluation of batch) {
-                const result = await saveEvaluationToAPI(evaluation);
-                if (result) {
-                    successCount++;
-                } else {
-                    failCount++;
+                
+                if (batch.length === 0) {
+                    alert("Tidak ada data untuk disimpan. Silakan isi minimal SS1 untuk setidaknya satu karyawan.");
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    return;
                 }
+                
+                console.log("Saving " + batch.length + " evaluations to API...");
+                
+                // Save to API
+                let successCount = 0;
+                let failCount = 0;
+                for (const evaluation of batch) {
+                    const result = await saveEvaluationToAPI(evaluation);
+                    console.log("Save result:", result);
+                    if (result) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                }
+                
+                console.log("Save complete. Success:", successCount, "Failed:", failCount);
+                
+                // Clear drafts after successful submission
+                batch.forEach(item => {
+                    const draftKey = `EGG_DRAFT_${item.penilai}_${item.yangDinilai}`;
+                    localStorage.removeItem(draftKey);
+                });
+                
+                if (failCount > 0) {
+                    alert(`Peringatan: ${successCount} data berhasil disimpan, ${failCount} data gagal disimpan ke API (disimpan di localStorage sebagai backup)`);
+                } else {
+                    alert("Data Berhasil Disimpan!"); 
+                }
+                location.reload();
+            } catch (error) {
+                console.error("Error saving data:", error);
+                alert("Terjadi error saat menyimpan data: " + error.message + ". Data disimpan di localStorage sebagai backup.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
-            
-            // Clear drafts after successful submission
-            batch.forEach(item => {
-                const draftKey = `EGG_DRAFT_${item.penilai}_${item.yangDinilai}`;
-                localStorage.removeItem(draftKey);
-            });
-            
-            if (failCount > 0) {
-                alert(`Peringatan: ${successCount} data berhasil disimpan, ${failCount} data gagal disimpan ke API (disimpan di localStorage sebagai backup)`);
-            } else {
-                alert("Data Disimpan!"); 
-            }
-            location.reload();
         };
 
 // API Functions for Google Sheets integration

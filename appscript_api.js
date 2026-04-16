@@ -22,6 +22,14 @@ function createCORSResponse(data) {
 // Endpoint: URL_WEB_APP?action=getUsers
 // =========================================================================
 function doGet(e) {
+  // Handle undefined event object
+  if (!e || !e.parameter) {
+    return createCORSResponse({
+      status: "error",
+      message: "Invalid request: no parameters provided"
+    });
+  }
+  
   // Handle CORS preflight
   if (e.parameter.cors === "true") {
     return createCORSResponse({status: "ok"});

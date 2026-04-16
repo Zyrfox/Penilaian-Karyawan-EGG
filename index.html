@@ -1014,10 +1014,15 @@
 // API Functions for Google Sheets integration
 async function loadEvaluationsFromAPI() {
     try {
+        console.log("Loading evaluations from API...");
         const response = await fetch(API_URL + "?action=getEvaluations");
         const result = await response.json();
         
+        console.log("API Response:", result);
+        
         if (result.status === "success") {
+            console.log("Loaded " + result.data.length + " evaluations from API");
+            console.log("First evaluation:", result.data[0]);
             // Also save to localStorage as backup
             if (result.data && result.data.length > 0) {
                 localStorage.setItem(DB_KEY, JSON.stringify({ evaluations: result.data }));

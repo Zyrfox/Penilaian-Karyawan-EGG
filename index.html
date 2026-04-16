@@ -83,9 +83,21 @@
 
         <section id="leaderboardSection" class="hidden fade-in">
             <div class="card p-6 mb-32">
-                <div class="flex justify-between items-center mb-8">
+                <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold">Rekap Nilai</h2>
                     <button onclick="exportToExcel()" class="btn-accent px-6 py-2.5 font-bold text-xs">EXPORT EXCEL</button>
+                </div>
+                <div class="flex gap-4 mb-6 items-center bg-[var(--surface2)] p-4 rounded-xl">
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-[var(--text-muted)]">Dari:</label>
+                        <input type="date" id="filterDateFrom" class="text-xs p-2 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-[var(--text-muted)]">Sampai:</label>
+                        <input type="date" id="filterDateTo" class="text-xs p-2 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                    </div>
+                    <button onclick="applyDateFilter()" class="px-4 py-2 bg-[var(--primary)] text-white text-xs font-bold rounded-lg hover:bg-[var(--primary-light)]">Filter</button>
+                    <button onclick="resetDateFilter()" class="px-4 py-2 bg-[var(--surface)] text-[var(--text-muted)] text-xs font-bold rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)]">Reset</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full">
@@ -100,9 +112,21 @@
 
         <section id="rankingSection" class="hidden fade-in">
             <div class="card p-6 mb-32">
-                <div class="flex justify-between items-center mb-8">
+                <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold">Performance Ranking</h2>
                     <button onclick="exportRankingExcel()" class="btn-accent px-6 py-2.5 font-bold text-xs">EXPORT RANKING</button>
+                </div>
+                <div class="flex gap-4 mb-6 items-center bg-[var(--surface2)] p-4 rounded-xl">
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-[var(--text-muted)]">Dari:</label>
+                        <input type="date" id="filterDateFromRanking" class="text-xs p-2 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-[var(--text-muted)]">Sampai:</label>
+                        <input type="date" id="filterDateToRanking" class="text-xs p-2 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                    </div>
+                    <button onclick="applyDateFilterRanking()" class="px-4 py-2 bg-[var(--primary)] text-white text-xs font-bold rounded-lg hover:bg-[var(--primary-light)]">Filter</button>
+                    <button onclick="resetDateFilterRanking()" class="px-4 py-2 bg-[var(--surface)] text-[var(--text-muted)] text-xs font-bold rounded-lg border border-[var(--border)] hover:bg-[var(--surface2)]">Reset</button>
                 </div>
                 <div id="rankingCategories" class="space-y-8">
                     <div class="category-section">
@@ -357,8 +381,24 @@
                     if (pass === MANAGER_PASS) sessionStorage.setItem('EGG_AUTH', 'true');
                     else return alert("Salah!");
                 }
-                if (tab === 'leaderboard') await renderLeaderboard();
-                if (tab === 'ranking') await renderRanking();
+                
+                // Set default date filter to current month
+                const now = new Date();
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                const fromDateStr = firstDay.toISOString().split('T')[0];
+                const toDateStr = lastDay.toISOString().split('T')[0];
+                
+                if (tab === 'leaderboard') {
+                    document.getElementById('filterDateFrom').value = fromDateStr;
+                    document.getElementById('filterDateTo').value = toDateStr;
+                    await renderLeaderboard(fromDateStr, toDateStr);
+                }
+                if (tab === 'ranking') {
+                    document.getElementById('filterDateFromRanking').value = fromDateStr;
+                    document.getElementById('filterDateToRanking').value = toDateStr;
+                    await renderRanking(fromDateStr, toDateStr);
+                }
             }
             const isP = tab === 'penilaian';
             const isL = tab === 'leaderboard';
@@ -540,8 +580,48 @@
             updateCardAverage(index);
         }
 
-        async function renderLeaderboard() {
-            const data = await loadEvaluationsFromAPI();
+        // Date filtering functions
+        function filterDataByDate(data, fromDate, toDate) {
+            if (!fromDate && !toDate) return data;
+            
+            const from = fromDate ? new Date(fromDate) : new Date('1970-01-01');
+            const to = toDate ? new Date(toDate) : new Date();
+            to.setHours(23, 59, 59, 999);
+            
+            return data.filter(item => {
+                if (!item.timestamp) return false;
+                const itemDate = new Date(item.timestamp);
+                return itemDate >= from && itemDate <= to;
+            });
+        }
+
+        function applyDateFilter() {
+            const fromDate = document.getElementById('filterDateFrom').value;
+            const toDate = document.getElementById('filterDateTo').value;
+            renderLeaderboard(fromDate, toDate);
+        }
+
+        function resetDateFilter() {
+            document.getElementById('filterDateFrom').value = '';
+            document.getElementById('filterDateTo').value = '';
+            renderLeaderboard();
+        }
+
+        function applyDateFilterRanking() {
+            const fromDate = document.getElementById('filterDateFromRanking').value;
+            const toDate = document.getElementById('filterDateToRanking').value;
+            renderRanking(fromDate, toDate);
+        }
+
+        function resetDateFilterRanking() {
+            document.getElementById('filterDateFromRanking').value = '';
+            document.getElementById('filterDateToRanking').value = '';
+            renderRanking();
+        }
+
+        async function renderLeaderboard(fromDate = null, toDate = null) {
+            const allData = await loadEvaluationsFromAPI();
+            const data = filterDataByDate(allData, fromDate, toDate);
             
             // Group by employee and calculate averages (same as ranking)
             const employeeMap = {};
@@ -643,15 +723,20 @@
         }
 
         async function exportToExcel() {
-            const data = await loadEvaluationsFromAPI();
+            const fromDate = document.getElementById('filterDateFrom').value;
+            const toDate = document.getElementById('filterDateTo').value;
+            const allData = await loadEvaluationsFromAPI();
+            const data = filterDataByDate(allData, fromDate, toDate);
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Rekap");
-            XLSX.writeFile(wb, `EGG_Report.xlsx`);
+            const dateRange = (fromDate || toDate) ? `_${fromDate}_${toDate}` : '';
+            XLSX.writeFile(wb, `EGG_Report${dateRange}.xlsx`);
         }
 
-        async function renderRanking() {
-            const data = await loadEvaluationsFromAPI();
+        async function renderRanking(fromDate = null, toDate = null) {
+            const allData = await loadEvaluationsFromAPI();
+            const data = filterDataByDate(allData, fromDate, toDate);
             
             // Group by employee and calculate averages
             const employeeMap = {};
@@ -772,7 +857,10 @@
         }
 
         async function exportRankingExcel() {
-            const data = await loadEvaluationsFromAPI();
+            const fromDate = document.getElementById('filterDateFromRanking').value;
+            const toDate = document.getElementById('filterDateToRanking').value;
+            const allData = await loadEvaluationsFromAPI();
+            const data = filterDataByDate(allData, fromDate, toDate);
             
             // Process data similar to renderRanking
             const employeeMap = {};
@@ -818,7 +906,8 @@
             const ws = XLSX.utils.json_to_sheet(rankingData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Ranking");
-            XLSX.writeFile(wb, `EGG_Ranking.xlsx`);
+            const dateRange = (fromDate || toDate) ? `_${fromDate}_${toDate}` : '';
+            XLSX.writeFile(wb, `EGG_Ranking${dateRange}.xlsx`);
         }
 
         document.getElementById('btnSubmit').onclick = async () => {

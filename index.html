@@ -993,6 +993,9 @@
                     localStorage.removeItem(draftKey);
                 });
                 
+                // Clear localStorage cache to force fresh data fetch from API on reload
+                localStorage.removeItem(DB_KEY);
+                
                 if (failCount > 0) {
                     const uniqueErrors = [...new Set(errorMessages)].slice(0, 3).join('\n');
                     alert(`Peringatan: ${successCount} data berhasil, ${failCount} data gagal.\n\nError:\n${uniqueErrors || 'Unknown error'}\n\nData disimpan di localStorage.`);

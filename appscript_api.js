@@ -86,22 +86,32 @@ function doGet(e) {
   // NEW: Get all evaluations for leaderboard and ranking
   if (action === "getEvaluations") {
     try {
+      Logger.log("=== getEvaluations START ===");
+      
       var ss = SpreadsheetApp.getActiveSpreadsheet();
+      Logger.log("Spreadsheet: " + ss.getName());
+      
       var sheet = ss.getSheetByName(CONFIG.SHEET_DB);
       
       // Check if sheet exists
       if (!sheet) {
+        Logger.log("Sheet DB_Penilaian tidak ditemukan");
         return ContentService.createTextOutput(JSON.stringify({
           status: "error",
           message: "Sheet DB_Penilaian tidak ditemukan"
         })).setMimeType(ContentService.MimeType.JSON);
       }
       
+      Logger.log("Sheet DB_Penilaian ditemukan");
+      
       var data = sheet.getDataRange().getValues();
+      Logger.log("Total rows in sheet: " + data.length);
+      
       var evaluations = [];
       
       // Check if sheet has data
       if (!data || data.length <= 1) {
+        Logger.log("Sheet kosong atau hanya ada header");
         return ContentService.createTextOutput(JSON.stringify({
           status: "success",
           data: []
@@ -110,16 +120,33 @@ function doGet(e) {
       
       // Get header row to determine structure
       var headers = data[0];
+      Logger.log("Headers: " + JSON.stringify(headers));
+      
       var hasPosition = headers.some(h => h && h.toString().toLowerCase().includes('posisi'));
       var hasOutlet = headers.some(h => h && h.toString().toLowerCase().includes('outlet'));
       var hasCategory = headers.some(h => h && h.toString().toLowerCase().includes('category'));
+      
+      Logger.log("hasPosition: " + hasPosition + ", hasOutlet: " + hasOutlet + ", hasCategory: " + hasCategory);
+      
+      // Map columns by name
+      var colIndex = {};
+      for (var h = 0; h < headers.length; h++) {
+        var header = headers[h] ? headers[h].toString().toLowerCase() : "";
+        colIndex[header] = h;
+      }
+      Logger.log("Column index mapping: " + JSON.stringify(colIndex));
       
       // Skip header row, start from index 1
       for (var i = 1; i < data.length; i++) {
         var row = data[i];
         
         // Skip empty rows
-        if (!row[1]) continue;
+        if (!row[1]) {
+          Logger.log("Row " + i + " skipped (empty penilai)");
+          continue;
+        }
+        
+        Logger.log("Processing row " + i + ": " + JSON.stringify(row));
         
         var evaluation = {
           timestamp: row[0] ? new Date(row[0]).toISOString() : null,
@@ -134,14 +161,6 @@ function doGet(e) {
           sholat: "",
           puasa: ""
         };
-        
-        // Map columns based on header structure
-        // Try to find columns by name
-        var colIndex = {};
-        for (var h = 0; h < headers.length; h++) {
-          var header = headers[h] ? headers[h].toString().toLowerCase() : "";
-          colIndex[header] = h;
-        }
         
         // Get position and outlet from row if available, otherwise from master data
         if (hasPosition && colIndex['posisi'] !== undefined) {
@@ -185,8 +204,12 @@ function doGet(e) {
           evaluation.category = categorizeByPosition(evaluation.posisi);
         }
         
+        Logger.log("Evaluation object: " + JSON.stringify(evaluation));
         evaluations.push(evaluation);
       }
+      
+      Logger.log("Total evaluations loaded: " + evaluations.length);
+      Logger.log("=== getEvaluations SUCCESS ===");
       
       return ContentService.createTextOutput(JSON.stringify({
         status: "success",
@@ -194,6 +217,10 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
       
     } catch (error) {
+      Logger.log("=== getEvaluations ERROR ===");
+      Logger.log("Error: " + error.toString());
+      Logger.log("Error stack: " + error.stack);
+      
       return ContentService.createTextOutput(JSON.stringify({
         status: "error",
         message: error.toString()

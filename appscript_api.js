@@ -192,15 +192,11 @@ function doGet(e) {
         'melaksanakan puasa': 'puasa'
       };
       
+      Logger.log("Header to field mapping: " + JSON.stringify(headerToField));
+      
       // Skip header row, start from index 1
       for (var i = 1; i < data.length; i++) {
         var row = data[i];
-        
-        // Skip empty rows
-        if (!row[1]) {
-          Logger.log("Row " + i + " skipped (empty penilai)");
-          continue;
-        }
         
         Logger.log("Processing row " + i + ": " + JSON.stringify(row));
         
@@ -229,6 +225,14 @@ function doGet(e) {
               evaluation[fieldName] = row[h].toString();
             }
           }
+        }
+        
+        Logger.log("Mapped evaluation: " + JSON.stringify(evaluation));
+        
+        // Skip empty rows based on mapped penilai
+        if (!evaluation.penilai) {
+          Logger.log("Row " + i + " skipped (empty penilai)");
+          continue;
         }
         
         // If position/outlet not in row, get from master data

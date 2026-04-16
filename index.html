@@ -931,8 +931,15 @@
             });
             
             // Save to API
+            let successCount = 0;
+            let failCount = 0;
             for (const evaluation of batch) {
-                await saveEvaluationToAPI(evaluation);
+                const result = await saveEvaluationToAPI(evaluation);
+                if (result) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
             }
             
             // Clear drafts after successful submission
@@ -941,7 +948,11 @@
                 localStorage.removeItem(draftKey);
             });
             
-            alert("Data Disimpan!"); 
+            if (failCount > 0) {
+                alert(`Peringatan: ${successCount} data berhasil disimpan, ${failCount} data gagal disimpan ke API (disimpan di localStorage sebagai backup)`);
+            } else {
+                alert("Data Disimpan!"); 
+            }
             location.reload();
         };
 

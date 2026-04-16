@@ -230,10 +230,16 @@ function doPost(e) {
 // NEW: Save single evaluation with all fields
 function saveSingleEvaluation(evaluation) {
   try {
+    Logger.log("=== saveSingleEvaluation START ===");
+    Logger.log("Evaluation data: " + JSON.stringify(evaluation));
+    
     var ss = SpreadsheetApp.getActiveSpreadsheet();
+    Logger.log("Spreadsheet: " + ss.getName());
+    
     var sheetDb = ss.getSheetByName(CONFIG.SHEET_DB);
     
     if (!sheetDb) {
+      Logger.log("Sheet DB_Penilaian tidak ditemukan, membuat baru...");
       // Create sheet if doesn't exist
       sheetDb = ss.insertSheet(CONFIG.SHEET_DB);
       // Add header
@@ -244,7 +250,10 @@ function saveSingleEvaluation(evaluation) {
         'AT1', 'AT2', 'AT3', 'AT4', 'AT5',
         'Sholat', 'Puasa'
       ]);
+      Logger.log("Sheet DB_Penilaian berhasil dibuat");
     }
+    
+    Logger.log("Sheet DB_Penilaian ditemukan, last row: " + sheetDb.getLastRow());
     
     var row = [
       new Date(),
@@ -260,7 +269,12 @@ function saveSingleEvaluation(evaluation) {
       evaluation.puasa
     ];
     
+    Logger.log("Row data: " + JSON.stringify(row));
+    
     sheetDb.appendRow(row);
+    
+    Logger.log("Data berhasil di-append, new last row: " + sheetDb.getLastRow());
+    Logger.log("=== saveSingleEvaluation SUCCESS ===");
     
     return ContentService.createTextOutput(JSON.stringify({
       status: "success",
@@ -268,6 +282,10 @@ function saveSingleEvaluation(evaluation) {
     })).setMimeType(ContentService.MimeType.JSON);
     
   } catch (error) {
+    Logger.log("=== saveSingleEvaluation ERROR ===");
+    Logger.log("Error: " + error.toString());
+    Logger.log("Error stack: " + error.stack);
+    
     return ContentService.createTextOutput(JSON.stringify({
       status: "error",
       message: error.toString()

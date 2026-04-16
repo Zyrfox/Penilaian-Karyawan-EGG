@@ -446,8 +446,6 @@
                 
                 let statusBadge = '';
                 let statusClass = '';
-                let showFields = false;
-                let showToggle = true;
                 
                 if (hasEval && existingEval) {
                     if (isRecentEval) {
@@ -466,7 +464,7 @@
                 }
                 
                 return `
-                <div class="card p-4 ${hasEval ? 'opacity-90' : ''}" id="card-${i}" onclick="toggleCard(${i})" style="cursor: pointer;">
+                <div class="card p-4 ${hasEval ? 'opacity-90' : ''}" id="card-${i}">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-[var(--primary)] text-white flex items-center justify-center font-bold">${u.nama.charAt(0)}</div>
@@ -481,21 +479,26 @@
                             <div id="avg-${i}" class="text-lg font-black"></div>
                         </div>
                     </div>
-                    <div id="fields-${i}" class="hidden mt-4">
+                    <div id="fields-${i}" class="hidden mt-4" onclick="event.stopPropagation()">
                         ${generateFields(i)}
                     </div>
-                    ${showToggle && hasEval && existingEval ? `
-                        <div class="space-y-3 mt-4" id="summary-${i}">
-                            <div class="bg-[var(--surface2)] p-4 rounded-xl">
-                                <p class="text-xs font-bold text-[var(--text-muted)] mb-2">Data Evaluasi Tersimpan:</p>
-                                <div class="grid grid-cols-3 gap-2 text-xs">
-                                    <div><span class="font-bold">Sholat:</span> ${existingEval.sholat}</div>
-                                    <div><span class="font-bold">Puasa:</span> ${existingEval.puasa === 'Tidak Dinilai' ? 'N/A (di luar Ramadhan)' : existingEval.puasa}</div>
-                                    <div><span class="font-bold">Tanggal:</span> ${new Date(existingEval.timestamp).toLocaleDateString('id-ID')}</div>
+                    <div id="toggle-area-${i}" class="mt-3">
+                        ${hasEval && existingEval ? `
+                            <div class="space-y-3" id="summary-${i}">
+                                <div class="bg-[var(--surface2)] p-4 rounded-xl">
+                                    <p class="text-xs font-bold text-[var(--text-muted)] mb-2">Data Evaluasi Tersimpan:</p>
+                                    <div class="grid grid-cols-3 gap-2 text-xs">
+                                        <div><span class="font-bold">Sholat:</span> ${existingEval.sholat}</div>
+                                        <div><span class="font-bold">Puasa:</span> ${existingEval.puasa === 'Tidak Dinilai' ? 'N/A (di luar Ramadhan)' : existingEval.puasa}</div>
+                                        <div><span class="font-bold">Tanggal:</span> ${new Date(existingEval.timestamp).toLocaleDateString('id-ID')}</div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ` : ''}
+                        ` : ''}
+                        <button onclick="toggleCard(${i}, event)" class="w-full py-2 text-xs font-bold text-[var(--primary)] border border-[var(--primary)] rounded-lg hover:bg-[var(--primary)] hover:text-white transition mt-3">
+                            <span id="toggle-text-${i}">Buka Form Nilai</span>
+                        </button>
+                    </div>
                 </div>
                 `;
             }).join('');
@@ -579,18 +582,23 @@
         }
 
         // Toggle card expand/collapse
-        function toggleCard(index) {
+        function toggleCard(index, event) {
+            if (event) event.stopPropagation();
+            
             const fieldsDiv = document.getElementById(`fields-${index}`);
             const summaryDiv = document.getElementById(`summary-${index}`);
+            const toggleText = document.getElementById(`toggle-text-${index}`);
             
             if (fieldsDiv.classList.contains('hidden')) {
                 // Show fields
                 fieldsDiv.classList.remove('hidden');
                 if (summaryDiv) summaryDiv.classList.add('hidden');
+                if (toggleText) toggleText.innerText = 'Tutup Form Nilai';
             } else {
                 // Hide fields
                 fieldsDiv.classList.add('hidden');
                 if (summaryDiv) summaryDiv.classList.remove('hidden');
+                if (toggleText) toggleText.innerText = 'Buka Form Nilai';
             }
         }
 

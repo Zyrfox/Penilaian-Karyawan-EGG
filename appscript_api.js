@@ -8,36 +8,60 @@ var CONFIG = {
 };
 
 // =========================================================================
+// CORS Helper Function
+// =========================================================================
+function createCORSResponse(data) {
+  var output = ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+  
+  return output;
+}
+
+// =========================================================================
 // 1. GET METHOD (Frontend minta daftar nama untuk di-render)
 // Endpoint: URL_WEB_APP?action=getUsers
 // =========================================================================
 function doGet(e) {
+  // Handle CORS preflight
+  if (e.parameter.cors === "true") {
+    return createCORSResponse({status: "ok"});
+  }
+  
   var action = e.parameter.action;
   var penilai = e.parameter.penilai; 
   
   if (action === "getUsers") {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(CONFIG.SHEET_MASTER);
-    var data = sheet.getDataRange().getValues();
-    
-    var users = [];
-    var infoPenilai = "";
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName(CONFIG.SHEET_MASTER);
+      
+      if (!sheet) {
+        return createCORSResponse({
+          status: "error",
+          message: "Sheet Master_List tidak ditemukan"
+        });
+      }
+      
+      var data = sheet.getDataRange().getValues();
+      
+      var users = [];
+      var infoPenilai = "";
 
-    if (penilai) {
-      for (var i = 1; i < data.length; i++) {
-        if (data[i][1] === penilai) {
-          infoPenilai = (data[i][2] + " " + data[i][3]).toUpperCase();
-          break;
+      if (penilai) {
+        for (var i = 1; i < data.length; i++) {
+          if (data[i][1] === penilai) {
+            infoPenilai = (data[i][2] + " " + data[i][3]).toUpperCase();
+            break;
+          }
         }
       }
-    }
 
-    for (var i = 1; i < data.length; i++) {
-      var nama = String(data[i][1] || "").trim();
-      var posisi = String(data[i][2] || "").trim();
-      var outlet = String(data[i][3] || "").trim();
-      
-      if (!nama || nama === "Nama Lengkap") continue;
+      for (var i = 1; i < data.length; i++) {
+        var nama = String(data[i][1] || "").trim();
+        var posisi = String(data[i][2] || "").trim();
+        var outlet = String(data[i][3] || "").trim();
+        
+        if (!nama || nama === "Nama Lengkap") continue;
 
       var roleUpper = posisi.toUpperCase();
       var outletUpper = outlet.toUpperCase();
@@ -77,10 +101,17 @@ function doGet(e) {
       }
     }
     
-    return ContentService.createTextOutput(JSON.stringify({
+    return createCORSResponse({
       status: "success",
       data: users
-    })).setMimeType(ContentService.MimeType.JSON);
+    });
+    
+    } catch (error) {
+      return createCORSResponse({
+        status: "error",
+        message: error.toString()
+      });
+    }
   }
   
   // NEW: Get all evaluations for leaderboard and ranking
@@ -96,10 +127,10 @@ function doGet(e) {
       // Check if sheet exists
       if (!sheet) {
         Logger.log("Sheet DB_Penilaian tidak ditemukan");
-        return ContentService.createTextOutput(JSON.stringify({
+        return createCORSResponse({
           status: "error",
           message: "Sheet DB_Penilaian tidak ditemukan"
-        })).setMimeType(ContentService.MimeType.JSON);
+        });
       }
       
       Logger.log("Sheet DB_Penilaian ditemukan");
@@ -112,10 +143,10 @@ function doGet(e) {
       // Check if sheet has data
       if (!data || data.length <= 1) {
         Logger.log("Sheet kosong atau hanya ada header");
-        return ContentService.createTextOutput(JSON.stringify({
+        return createCORSResponse({
           status: "success",
           data: []
-        })).setMimeType(ContentService.MimeType.JSON);
+        });
       }
       
       // Get header row to determine structure
@@ -211,24 +242,24 @@ function doGet(e) {
       Logger.log("Total evaluations loaded: " + evaluations.length);
       Logger.log("=== getEvaluations SUCCESS ===");
       
-      return ContentService.createTextOutput(JSON.stringify({
+      return createCORSResponse({
         status: "success",
         data: evaluations
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
       
     } catch (error) {
       Logger.log("=== getEvaluations ERROR ===");
       Logger.log("Error: " + error.toString());
       Logger.log("Error stack: " + error.stack);
       
-      return ContentService.createTextOutput(JSON.stringify({
+      return createCORSResponse({
         status: "error",
         message: error.toString()
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
   }
   
-  return ContentService.createTextOutput("Invalid Action").setMimeType(ContentService.MimeType.TEXT);
+  return createCORSResponse({status: "error", message: "Invalid Action"});
 }
 
 // =========================================================================
@@ -247,10 +278,10 @@ function doPost(e) {
     }
     
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({
+    return createCORSResponse({
       status: "error",
       message: error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    });
   }
 }
 
@@ -303,20 +334,20 @@ function saveSingleEvaluation(evaluation) {
     Logger.log("Data berhasil di-append, new last row: " + sheetDb.getLastRow());
     Logger.log("=== saveSingleEvaluation SUCCESS ===");
     
-    return ContentService.createTextOutput(JSON.stringify({
+    return createCORSResponse({
       status: "success",
       message: "Evaluasi berhasil disimpan!"
-    })).setMimeType(ContentService.MimeType.JSON);
+    });
     
   } catch (error) {
     Logger.log("=== saveSingleEvaluation ERROR ===");
     Logger.log("Error: " + error.toString());
     Logger.log("Error stack: " + error.stack);
     
-    return ContentService.createTextOutput(JSON.stringify({
+    return createCORSResponse({
       status: "error",
       message: error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    });
   }
 }
 
@@ -358,16 +389,16 @@ function saveBatchEvaluations(records) {
       sheetDb.getRange(sheetDb.getLastRow() + 1, 1, rowsToInsert.length, rowsToInsert[0].length).setValues(rowsToInsert);
     }
     
-    return ContentService.createTextOutput(JSON.stringify({
+    return createCORSResponse({
       status: "success",
       message: rowsToInsert.length + " data berhasil masuk ke DB!"
-    })).setMimeType(ContentService.MimeType.JSON);
+    });
     
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({
+    return createCORSResponse({
       status: "error",
       message: error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    });
   }
 }
 

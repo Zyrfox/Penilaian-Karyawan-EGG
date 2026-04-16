@@ -950,10 +950,24 @@ async function loadEvaluationsFromAPI() {
     try {
         const response = await fetch(API_URL + "?action=getEvaluations");
         const result = await response.json();
-        return result.status === "success" ? result.data : [];
+        
+        if (result.status === "success") {
+            // Also save to localStorage as backup
+            if (result.data && result.data.length > 0) {
+                localStorage.setItem(DB_KEY, JSON.stringify({ evaluations: result.data }));
+            }
+            return result.data;
+        } else {
+            console.error("API returned error:", result.message);
+            // Fallback to localStorage
+            const raw = localStorage.getItem(DB_KEY);
+            return raw ? JSON.parse(raw).evaluations : [];
+        }
     } catch (error) {
         console.error("Failed to load evaluations from API:", error);
-        return [];
+        // Fallback to localStorage
+        const raw = localStorage.getItem(DB_KEY);
+        return raw ? JSON.parse(raw).evaluations : [];
     }
 }
 
@@ -970,9 +984,19 @@ async function saveEvaluationToAPI(evaluation) {
             })
         });
         const result = await response.json();
+        
+        // Also save to localStorage as backup
+        const raw = localStorage.getItem(DB_KEY);
+        const existingData = raw ? JSON.parse(raw).evaluations : [];
+        localStorage.setItem(DB_KEY, JSON.stringify({ evaluations: [...existingData, evaluation] }));
+        
         return result.status === "success";
     } catch (error) {
         console.error("Failed to save evaluation to API:", error);
+        // Save to localStorage as fallback
+        const raw = localStorage.getItem(DB_KEY);
+        const existingData = raw ? JSON.parse(raw).evaluations : [];
+        localStorage.setItem(DB_KEY, JSON.stringify({ evaluations: [...existingData, evaluation] }));
         return false;
     }
 }

@@ -194,24 +194,36 @@ function doGet(e) {
         };
         
         // Get position and outlet from row if available, otherwise from master data
-        if (hasPosition && colIndex['posisi'] !== undefined) {
+        // Try different header variations
+        if (hasPosition) {
           evaluation.posisi = row[colIndex['posisi']] || "";
         }
-        if (hasOutlet && colIndex['outlet'] !== undefined) {
+        if (hasOutlet) {
           evaluation.outlet = row[colIndex['outlet']] || "";
         }
-        if (hasCategory && colIndex['category'] !== undefined) {
+        if (hasCategory) {
           evaluation.category = row[colIndex['category']] || "";
         }
         
-        // Get score columns
+        // Get score columns - try exact match first, then partial match
         var scoreColumns = ['ss1', 'ss2', 'ss3', 'ss4', 'hs1', 'hs2', 'hs3', 'hs4', 
                            'at1', 'at2', 'at3', 'at4', 'at5', 'sholat', 'puasa'];
         
         for (var s = 0; s < scoreColumns.length; s++) {
           var colName = scoreColumns[s];
+          
+          // Try exact lowercase match
           if (colIndex[colName] !== undefined) {
             evaluation[colName] = row[colIndex[colName]] || "";
+          } else {
+            // Try to find column by partial match
+            for (var h = 0; h < headers.length; h++) {
+              var header = headers[h] ? headers[h].toString().toLowerCase() : "";
+              if (header.includes(colName) || header.includes(colName.toUpperCase())) {
+                evaluation[colName] = row[h] || "";
+                break;
+              }
+            }
           }
         }
         

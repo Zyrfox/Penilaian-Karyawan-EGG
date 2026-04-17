@@ -223,6 +223,7 @@ function doGet(e) {
         };
         
         // Map row data using Indonesian headers
+        var mapped = false;
         for (var h = 0; h < headers.length; h++) {
           var header = headers[h] ? headers[h].toString().toLowerCase() : "";
           var fieldName = headerToField[header];
@@ -232,7 +233,34 @@ function doGet(e) {
             } else {
               evaluation[fieldName] = row[h].toString();
             }
+            mapped = true;
           }
+        }
+        
+        // If no headers matched, try position-based reading
+        if (!mapped) {
+          Logger.log("No headers matched, trying position-based reading");
+          evaluation.timestamp = row[0] ? new Date(row[0]).toISOString() : null;
+          evaluation.penilai = row[1] ? row[1].toString() : "";
+          evaluation.yangDinilai = row[2] ? row[2].toString() : "";
+          evaluation.posisi = row[3] ? row[3].toString() : "";
+          evaluation.outlet = row[4] ? row[4].toString() : "";
+          evaluation.category = row[5] ? row[5].toString() : "";
+          evaluation.ss1 = row[6] ? row[6].toString() : "";
+          evaluation.ss2 = row[7] ? row[7].toString() : "";
+          evaluation.ss3 = row[8] ? row[8].toString() : "";
+          evaluation.ss4 = row[9] ? row[9].toString() : "";
+          evaluation.hs1 = row[10] ? row[10].toString() : "";
+          evaluation.hs2 = row[11] ? row[11].toString() : "";
+          evaluation.hs3 = row[12] ? row[12].toString() : "";
+          evaluation.hs4 = row[13] ? row[13].toString() : "";
+          evaluation.at1 = row[14] ? row[14].toString() : "";
+          evaluation.at2 = row[15] ? row[15].toString() : "";
+          evaluation.at3 = row[16] ? row[16].toString() : "";
+          evaluation.at4 = row[17] ? row[17].toString() : "";
+          evaluation.at5 = row[18] ? row[18].toString() : "";
+          evaluation.sholat = row[19] ? row[19].toString() : "";
+          evaluation.puasa = row[20] ? row[20].toString() : "";
         }
         
         Logger.log("Mapped evaluation: " + JSON.stringify(evaluation));
